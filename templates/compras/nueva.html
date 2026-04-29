@@ -1,0 +1,183 @@
+{% extends 'layouts/base.html' %}
+{% block title %}Nueva Compra{% endblock %}
+{% block page_title %}Registrar Nueva Compra{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-truck"></i> Datos del proveedor</div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Proveedor *</label>
+                    <select id="cmpProveedor" class="form-select">
+                        <option value="">-- Selecciona --</option>
+                        {% for p in proveedores %}
+                        <option value="{{ p.pk }}">{{ p.empresa }} ({{ p.nit }}) - {{ p.pais }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label class="form-label">Moneda</label>
+                        <select id="cmpMoneda" class="form-select">
+                            <option value="BOB">Boliviano</option>
+                            <option value="USD">Dolar USA</option>
+                            <option value="EUR">Euro</option>
+                            <option value="CNY">Yuan</option>
+                        </select>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label class="form-label">Tipo de cambio</label>
+                        <input id="cmpTC" type="number" step="0.01" value="1" class="form-control">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header"><i class="bi bi-plus-circle"></i> Agregar producto</div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <label class="form-label small">Producto</label>
+                    <select id="cmpProducto" class="form-select form-select-sm">
+                        <option value="">-- Selecciona --</option>
+                        {% for p in productos %}
+                        <option value="{{ p.pk }}" data-precio="0" data-nombre="{{ p.nombre }}">{{ p.codigo }} - {{ p.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label small">Cantidad</label>
+                        <input id="cmpCant" type="number" min="1" value="1" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small">Precio unitario</label>
+                        <input id="cmpPrecio" type="number" min="0" step="0.01" class="form-control form-control-sm">
+                    </div>
+                </div>
+                <button id="cmpAddBtn" class="btn btn-primary btn-sm w-100 mt-3">
+                    <i class="bi bi-plus-lg"></i> Agregar al detalle
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between"><span><i class="bi bi-list-ul"></i> Detalle de la compra</span><span class="text-muted small">Los productos crearan lotes en inventario</span></div>
+            <div class="card-body p-0">
+                <table class="table mb-0" id="cmpTabla">
+                    <thead><tr><th>Producto</th><th class="text-end">Cant.</th><th class="text-end">Precio</th><th class="text-end">Subtotal</th><th></th></tr></thead>
+                    <tbody></tbody>
+                    <tfoot>
+                        <tr class="table-light">
+                            <th colspan="3" class="text-end">TOTAL</th>
+                            <th class="text-end fs-5 text-success">Bs <span id="cmpTotal">0.00</span></th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <div class="card-footer d-flex gap-2 justify-content-end">
+                <a href="{% url 'compras:lista' %}" class="btn btn-outline-secondary">Cancelar</a>
+                <button id="cmpConfirmBtn" class="btn btn-success" disabled>
+                    <i class="bi bi-check2-circle"></i> Confirmar compra
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const items = [];
+const $tbody = document.querySelector('#cmpTabla tbody');
+const $total = document.getElementById('cmpTotal');
+const $confirm = document.getElementById('cmpConfirmBtn');
+
+function render() {
+    if (!items.length) {
+        $tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Sin productos agregados</td></tr>';
+    } else {
+        $tbody.innerHTML = items.map((it, i) => `
+            <tr>
+                <td><strong>${it.nombre}</strong></td>
+                <td class="text-end">${it.cantidad}</td>
+                <td class="text-end">${it.precio.toFixed(2)}</td>
+                <td class="text-end fw-bold">${(it.cantidad * it.precio).toFixed(2)}</td>
+                <td><button class="btn btn-sm btn-outline-danger" onclick="quitar(${i})"><i class="bi bi-x"></i></button></td>
+            </tr>
+        `).join('');
+    }
+    const t = items.reduce((s, it) => s + it.cantidad * it.precio, 0);
+    $total.textContent = t.toFixed(2);
+    $confirm.disabled = items.length === 0 || !document.getElementById('cmpProveedor').value;
+}
+
+function quitar(i) {
+    items.splice(i, 1);
+    render();
+}
+
+document.getElementById('cmpAddBtn').addEventListener('click', () => {
+    const sel = document.getElementById('cmpProducto');
+    const pid = sel.value;
+    const cant = parseInt(document.getElementById('cmpCant').value);
+    const precio = parseFloat(document.getElementById('cmpPrecio').value);
+    if (!pid || !cant || !precio || precio <= 0) {
+        alert('Completa producto, cantidad y precio.');
+        return;
+    }
+    const opt = sel.options[sel.selectedIndex];
+    items.push({
+        producto_id: parseInt(pid),
+        nombre: opt.dataset.nombre,
+        cantidad: cant,
+        precio: precio,
+    });
+    render();
+    document.getElementById('cmpProducto').value = '';
+    document.getElementById('cmpCant').value = 1;
+    document.getElementById('cmpPrecio').value = '';
+});
+
+document.getElementById('cmpProveedor').addEventListener('change', render);
+
+$confirm.addEventListener('click', async () => {
+    const proveedor_id = document.getElementById('cmpProveedor').value;
+    const moneda = document.getElementById('cmpMoneda').value;
+    const tipo_cambio = parseFloat(document.getElementById('cmpTC').value) || 1;
+    if (!proveedor_id || !items.length) return;
+
+    $confirm.disabled = true;
+    $confirm.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Procesando...';
+    try {
+        const res = await fetch(`{% url 'compras:confirmar' %}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: JSON.stringify({ proveedor_id, moneda, tipo_cambio, items }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+            window.location.href = `/compras/${data.compra_id}/`;
+        } else {
+            alert('Error: ' + data.error);
+            $confirm.disabled = false;
+            $confirm.innerHTML = '<i class="bi bi-check2-circle"></i> Confirmar compra';
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+        $confirm.disabled = false;
+        $confirm.innerHTML = '<i class="bi bi-check2-circle"></i> Confirmar compra';
+    }
+});
+
+render();
+</script>
+{% endblock %}

@@ -1,0 +1,152 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ EMPRESA_NOMBRE }} ERP{% endblock %}</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Estilos custom -->
+    <link rel="stylesheet" href="{% static 'css/erp.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<div class="erp-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="erp-sidebar" id="sidebar">
+        <div class="erp-brand">
+            <i class="bi bi-shop-window"></i>
+            <span>{{ EMPRESA_NOMBRE }}</span>
+        </div>
+
+        <nav class="erp-nav">
+            <a href="{% url 'dashboard:home' %}" class="nav-item {% if request.resolver_match.namespace == 'dashboard' %}active{% endif %}">
+                <i class="bi bi-grid-1x2-fill"></i><span>Dashboard</span>
+            </a>
+
+            <div class="nav-section">VENTAS</div>
+            <a href="{% url 'ventas:pos' %}" class="nav-item">
+                <i class="bi bi-cart3"></i><span>Punto de Venta</span>
+            </a>
+            <a href="{% url 'ventas:lista' %}" class="nav-item {% if request.resolver_match.namespace == 'ventas' and 'pos' not in request.path %}active{% endif %}">
+                <i class="bi bi-receipt"></i><span>Notas de Venta</span>
+            </a>
+            <a href="{% url 'clientes:lista' %}" class="nav-item {% if request.resolver_match.namespace == 'clientes' %}active{% endif %}">
+                <i class="bi bi-people"></i><span>Clientes</span>
+            </a>
+
+            <div class="nav-section">COMPRAS</div>
+            <a href="{% url 'compras:nueva' %}" class="nav-item">
+                <i class="bi bi-bag-plus"></i><span>Nueva Compra</span>
+            </a>
+            <a href="{% url 'compras:lista' %}" class="nav-item {% if request.resolver_match.namespace == 'compras' and 'nueva' not in request.path %}active{% endif %}">
+                <i class="bi bi-file-earmark-text"></i><span>Notas de Compra</span>
+            </a>
+            <a href="{% url 'proveedores:lista' %}" class="nav-item {% if request.resolver_match.namespace == 'proveedores' %}active{% endif %}">
+                <i class="bi bi-truck"></i><span>Proveedores</span>
+            </a>
+
+            <div class="nav-section">INVENTARIO</div>
+            <a href="{% url 'inventario:productos' %}" class="nav-item {% if 'productos' in request.path %}active{% endif %}">
+                <i class="bi bi-box-seam"></i><span>Productos</span>
+            </a>
+            <a href="{% url 'inventario:lotes' %}" class="nav-item {% if 'lotes' in request.path %}active{% endif %}">
+                <i class="bi bi-boxes"></i><span>Stock por Lotes</span>
+            </a>
+
+            <div class="nav-section">TIENDA ONLINE</div>
+            <a href="{% url 'tienda:admin_pedidos' %}" class="nav-item {% if 'admin/pedidos' in request.path %}active{% endif %}">
+                <i class="bi bi-globe"></i><span>Pedidos Online</span>
+            </a>
+            <a href="/tienda/" target="_blank" class="nav-item">
+                <i class="bi bi-box-arrow-up-right"></i><span>Ver tienda publica</span>
+            </a>
+
+            <div class="nav-section">RECURSOS HUMANOS</div>
+            <a href="{% url 'personal:empleados' %}" class="nav-item {% if 'empleados' in request.path %}active{% endif %}">
+                <i class="bi bi-person-badge"></i><span>Empleados</span>
+            </a>
+            <a href="{% url 'personal:contratos' %}" class="nav-item {% if 'contratos' in request.path %}active{% endif %}">
+                <i class="bi bi-file-earmark-medical"></i><span>Contratos</span>
+            </a>
+            <a href="{% url 'personal:bitacora' %}" class="nav-item {% if 'bitacora' in request.path %}active{% endif %}">
+                <i class="bi bi-clock-history"></i><span>Bitacora</span>
+            </a>
+
+            <div class="nav-section">SISTEMA</div>
+            <a href="/admin/" class="nav-item" target="_blank">
+                <i class="bi bi-gear"></i><span>Administracion</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- CONTENT -->
+    <div class="erp-main">
+        <!-- TOPBAR -->
+        <header class="erp-topbar">
+            <button class="btn btn-link p-0 me-3 d-lg-none" id="toggleSidebar">
+                <i class="bi bi-list fs-3 text-dark"></i>
+            </button>
+            <div class="topbar-title">{% block page_title %}Dashboard{% endblock %}</div>
+
+            <div class="topbar-right ms-auto">
+                <span class="text-muted me-3 d-none d-md-inline">
+                    <i class="bi bi-calendar3"></i> {% now "l, d \\d\\e F" %}
+                </span>
+                <div class="dropdown">
+                    <button class="btn btn-sm dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown">
+                        <div class="avatar me-2">{{ user.username|first|upper }}</div>
+                        <span class="d-none d-sm-inline">{{ user.username }}</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="/admin/"><i class="bi bi-gear"></i> Admin</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form action="{% url 'logout' %}" method="post" class="px-2">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="bi bi-box-arrow-right"></i> Cerrar sesion
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <main class="erp-content">
+            {% if messages %}
+                {% for msg in messages %}
+                    <div class="alert alert-{{ msg.tags }} alert-dismissible fade show" role="alert">
+                        {{ msg }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer class="erp-footer text-muted text-center small py-3">
+            &copy; {{ EMPRESA_ANIO }} {{ EMPRESA_NOMBRE }} ERP &mdash; {{ EMPRESA_SLOGAN }}
+        </footer>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.getElementById('toggleSidebar')?.addEventListener('click', () => {
+        document.getElementById('sidebar').classList.toggle('show');
+    });
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

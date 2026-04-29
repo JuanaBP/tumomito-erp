@@ -1,0 +1,37 @@
+{% extends 'tienda/base_tienda.html' %}
+{% load humanize %}
+{% block title %}Mis pedidos{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h2 class="mb-4"><i class="bi bi-bag"></i> Mis pedidos</h2>
+    {% if pedidos %}
+        {% for p in pedidos %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between flex-wrap align-items-start">
+                    <div>
+                        <h5 class="mb-1">{{ p.numero }}</h5>
+                        <p class="text-muted mb-1 small">{{ p.fecha_pedido|date:"d/m/Y H:i" }} - {{ p.total_items }} items</p>
+                        <span class="estado-badge bg-{{ p.color_estado }} text-white">{{ p.get_estado_display }}</span>
+                    </div>
+                    <div class="text-end">
+                        <h4 class="text-success mb-1">Bs {{ p.monto_total|floatformat:2|intcomma }}</h4>
+                        <a href="{% url 'tienda:mi_pedido_detalle' p.id %}" class="btn btn-sm btn-outline-primary">Ver detalle</a>
+                        {% if p.estado == 'pendiente' %}
+                        <a href="{% url 'tienda:pedido_pago' p.id %}" class="btn btn-sm btn-success"><i class="bi bi-credit-card"></i> Pagar</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-bag-x" style="font-size:4rem; color:#d1d5db;"></i>
+            <h5 class="mt-3 text-muted">Aun no hiciste pedidos</h5>
+            <a href="{% url 'tienda:catalogo' %}" class="btn btn-primary mt-2"><i class="bi bi-grid"></i> Ir al catalogo</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

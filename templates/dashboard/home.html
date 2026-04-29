@@ -1,0 +1,196 @@
+{% extends 'layouts/base.html' %}
+{% load humanize %}
+
+{% block title %}Dashboard - {{ EMPRESA_NOMBRE }} ERP{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- KPIs -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-icon bg-success"><i class="bi bi-cash-stack"></i></div>
+            <div class="kpi-label">Ventas hoy</div>
+            <div class="kpi-value">Bs {{ ventas_hoy_total|floatformat:2|intcomma }}</div>
+            <div class="kpi-trend">{{ ventas_hoy_n }} transacciones</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-icon bg-primary"><i class="bi bi-graph-up-arrow"></i></div>
+            <div class="kpi-label">Ventas este mes</div>
+            <div class="kpi-value">Bs {{ ventas_mes_total|floatformat:2|intcomma }}</div>
+            <div class="kpi-trend">{{ ventas_mes_n }} ventas en el mes</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-icon bg-warning"><i class="bi bi-bag"></i></div>
+            <div class="kpi-label">Compras del mes</div>
+            <div class="kpi-value">Bs {{ compras_mes_total|floatformat:2|intcomma }}</div>
+            <div class="kpi-trend">A proveedores</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="kpi-card">
+            <div class="kpi-icon bg-info"><i class="bi bi-box-seam"></i></div>
+            <div class="kpi-label">Productos activos</div>
+            <div class="kpi-value">{{ productos_total }}</div>
+            <div class="kpi-trend">{{ clientes_total }} clientes - {{ proveedores_total }} proveedores</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <!-- Grafico ventas -->
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-graph-up text-primary"></i> Ventas ultimos 30 dias</span>
+                <a href="{% url 'ventas:lista' %}" class="btn btn-sm btn-outline-primary">Ver todo</a>
+            </div>
+            <div class="card-body">
+                <canvas id="chartVentas" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grafico categorias -->
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-pie-chart text-primary"></i> Ventas por categoria
+            </div>
+            <div class="card-body">
+                <canvas id="chartCategorias"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Top productos -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-trophy text-warning"></i> Top 5 productos vendidos (30 dias)
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>Producto</th><th class="text-end">Unidades</th><th class="text-end">Ingresos</th></tr></thead>
+                    <tbody>
+                        {% for p in top_productos %}
+                        <tr>
+                            <td>{{ p.inventario__producto__nombre }}</td>
+                            <td class="text-end">{{ p.total_vendido }}</td>
+                            <td class="text-end fw-bold">Bs {{ p.ingresos|floatformat:2|intcomma }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-center text-muted py-3">Sin ventas registradas</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock bajo -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-exclamation-triangle text-danger"></i> Productos con stock bajo
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>Codigo</th><th>Producto</th><th class="text-end">Stock</th></tr></thead>
+                    <tbody>
+                        {% for p in stock_bajo %}
+                        <tr>
+                            <td><code>{{ p.codigo }}</code></td>
+                            <td>{{ p.nombre }}</td>
+                            <td class="text-end"><span class="badge badge-stock-low px-2 py-1">{{ p.stock_total }}</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-center text-muted py-3">Todos los productos tienen stock OK</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ultimas ventas -->
+<div class="card mt-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-receipt"></i> Ultimas ventas</span>
+        <a href="{% url 'ventas:pos' %}" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-lg"></i> Nueva venta
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr><th>Nro</th><th>Fecha</th><th>Cliente</th><th>Vendedor</th><th class="text-end">Total</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for v in ultimas_ventas %}
+                <tr>
+                    <td><code>NV-{{ v.id|stringformat:"06d" }}</code></td>
+                    <td>{{ v.fecha|date:"d/m/Y" }} {{ v.hora|time:"H:i" }}</td>
+                    <td>{{ v.cliente.persona.nombre }}</td>
+                    <td>{{ v.empleado.persona.nombre }}</td>
+                    <td class="text-end fw-bold">Bs {{ v.monto_total|floatformat:2|intcomma }}</td>
+                    <td><a href="{% url 'ventas:detalle' v.id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-muted py-3">Sin ventas todavia</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Grafico de ventas
+new Chart(document.getElementById('chartVentas'), {
+    type: 'line',
+    data: {
+        labels: {{ chart_labels|safe }},
+        datasets: [{
+            label: 'Ventas (Bs)',
+            data: {{ chart_values|safe }},
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+            fill: true,
+            tension: 0.35,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
+    }
+});
+
+// Grafico de categorias
+new Chart(document.getElementById('chartCategorias'), {
+    type: 'doughnut',
+    data: {
+        labels: {{ cat_labels|safe }},
+        datasets: [{
+            data: {{ cat_values|safe }},
+            backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6']
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom' } }
+    }
+});
+</script>
+{% endblock %}

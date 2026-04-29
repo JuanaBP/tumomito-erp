@@ -1,0 +1,85 @@
+{% extends 'tienda/base_tienda.html' %}
+{% load humanize %}
+{% block title %}Pagar pedido {{ pedido.numero }}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body text-center py-4">
+                    <i class="bi bi-check-circle-fill text-success" style="font-size:3rem;"></i>
+                    <h3 class="mt-3">Pedido creado</h3>
+                    <p class="text-muted">Tu numero de pedido es <strong>{{ pedido.numero }}</strong></p>
+                    <h2 class="text-success">Bs {{ pedido.monto_total|floatformat:2|intcomma }}</h2>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header"><i class="bi bi-credit-card"></i> Instrucciones de pago</div>
+                <div class="card-body">
+
+                {% if pedido.metodo_pago == 'transferencia' %}
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-bank"></i> Datos para transferencia bancaria:</h6>
+                        <ul class="mb-0">
+                            <li><strong>Banco:</strong> Banco Nacional de Bolivia (BNB)</li>
+                            <li><strong>Titular:</strong> TUMOMITO Importadora SRL</li>
+                            <li><strong>Cuenta:</strong> 1234567890</li>
+                            <li><strong>Tipo:</strong> Cuenta corriente en Bolivianos</li>
+                            <li><strong>Monto exacto:</strong> Bs {{ pedido.monto_total|floatformat:2 }}</li>
+                        </ul>
+                    </div>
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Numero de operacion / referencia</label>
+                            <input type="text" name="referencia_pago" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Comprobante (foto o captura) *</label>
+                            <input type="file" name="comprobante" accept="image/*" class="form-control" required>
+                        </div>
+                        <button class="btn btn-success btn-lg w-100"><i class="bi bi-cloud-upload"></i> Enviar comprobante</button>
+                    </form>
+
+                {% elif pedido.metodo_pago == 'qr' %}
+                    <div class="text-center mb-4">
+                        <h6><i class="bi bi-qr-code"></i> Escanea el QR para pagar</h6>
+                        <div class="d-inline-block bg-white p-3 border rounded">
+                            <!-- QR placeholder; sustituir por imagen real -->
+                            <div style="width:200px;height:200px;background:repeating-linear-gradient(45deg,#000,#000 10px,#fff 10px,#fff 20px);"></div>
+                        </div>
+                        <p class="text-muted small mt-2">Tigo Money: 70123456 | Soliz: 70123456<br>Monto: <strong>Bs {{ pedido.monto_total|floatformat:2 }}</strong></p>
+                    </div>
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Codigo de la transaccion</label>
+                            <input type="text" name="referencia_pago" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Captura del pago *</label>
+                            <input type="file" name="comprobante" accept="image/*" class="form-control" required>
+                        </div>
+                        <button class="btn btn-success btn-lg w-100"><i class="bi bi-cloud-upload"></i> Enviar comprobante</button>
+                    </form>
+
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-cash-coin"></i> Vas a pagar <strong>Bs {{ pedido.monto_total|floatformat:2 }}</strong> en efectivo cuando recibas el pedido.
+                    </div>
+                    <form method="post">
+                        {% csrf_token %}
+                        <button class="btn btn-success btn-lg w-100"><i class="bi bi-check2-circle"></i> Confirmar pedido contra entrega</button>
+                    </form>
+                {% endif %}
+
+                </div>
+            </div>
+
+            <p class="text-center mt-3"><a href="{% url 'tienda:mis_pedidos' %}" class="text-muted small">Pagar despues - ir a mis pedidos</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

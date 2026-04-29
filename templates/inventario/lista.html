@@ -1,0 +1,60 @@
+{% extends 'layouts/base.html' %}
+{% load humanize %}
+{% block title %}Inventario{% endblock %}
+{% block page_title %}Stock por Lotes (FIFO){% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+    <div class="col-md-6">
+        <div class="kpi-card">
+            <div class="kpi-icon bg-primary"><i class="bi bi-boxes"></i></div>
+            <div class="kpi-label">Total unidades en stock</div>
+            <div class="kpi-value">{{ total_unidades|intcomma }}</div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="kpi-card">
+            <div class="kpi-icon bg-success"><i class="bi bi-cash-coin"></i></div>
+            <div class="kpi-label">Valor del inventario</div>
+            <div class="kpi-value">Bs {{ valor_inventario|floatformat:2|intcomma }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between flex-wrap gap-2">
+        <form method="get" class="d-flex gap-2 flex-grow-1" style="max-width: 500px;">
+            <input type="search" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="Lote, producto, codigo...">
+            <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-search"></i></button>
+        </form>
+        <a href="{% url 'inventario:lote_crear' %}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> Nuevo Lote</a>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead><tr><th>Lote</th><th>Producto</th><th>Adquision</th><th>Vencimiento</th><th class="text-end">Recibido</th><th class="text-end">Disponible</th><th class="text-end">Costo</th><th></th></tr></thead>
+            <tbody>
+                {% for l in lotes %}
+                <tr>
+                    <td><code>{{ l.nro_lote }}</code></td>
+                    <td><strong>{{ l.producto.nombre }}</strong><br><small class="text-muted">{{ l.producto.codigo }}</small></td>
+                    <td>{{ l.fecha_adquision|date:"d/m/Y" }}</td>
+                    <td>{{ l.fecha_vencimiento|date:"d/m/Y"|default:"-" }}</td>
+                    <td class="text-end">{{ l.cantidad_recibida }}</td>
+                    <td class="text-end">
+                        {% if l.cantidad_disponible == 0 %}<span class="badge bg-secondary">Agotado</span>
+                        {% else %}<strong>{{ l.cantidad_disponible }}</strong>{% endif %}
+                    </td>
+                    <td class="text-end">Bs {{ l.coste_unitario|floatformat:2 }}</td>
+                    <td><a href="{% url 'inventario:lote_editar' l.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center text-muted py-4">Sin lotes en inventario</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if lotes.has_other_pages %}
+    <div class="card-footer">{% include 'layouts/_paginator.html' with page=lotes %}</div>
+    {% endif %}
+</div>
+{% endblock %}

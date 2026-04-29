@@ -1,0 +1,86 @@
+{% extends 'tienda/base_tienda.html' %}
+{% load humanize %}
+{% block title %}{{ producto.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <nav aria-label="breadcrumb" class="small">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'tienda:home' %}" class="text-decoration-none">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'tienda:catalogo' %}?categoria={{ producto.categoria }}" class="text-decoration-none">{{ producto.categoria }}</a></li>
+            <li class="breadcrumb-item active">{{ producto.nombre }}</li>
+        </ol>
+    </nav>
+
+    <div class="row g-5">
+        <div class="col-md-5">
+            <div class="product-detail-img">
+                {% if producto.imagen %}
+                    <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}">
+                {% else %}
+                    <i class="bi bi-box"></i>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-7">
+            <div class="text-muted text-uppercase small">{{ producto.categoria }}{% if producto.subcategoria %} - {{ producto.subcategoria }}{% endif %}</div>
+            <h1 class="mt-2">{{ producto.nombre }}</h1>
+            <p class="text-muted">Codigo: <code>{{ producto.codigo }}</code> - Marca: <strong>{{ producto.fabricante }}</strong></p>
+
+            <div class="my-4">
+                <h2 class="text-success mb-1">Bs {{ producto.precio_venta|floatformat:2|intcomma }}</h2>
+                {% if producto.tiene_descuento_mayorista %}
+                <div class="alert alert-warning d-flex align-items-center py-2 px-3 mt-2 small">
+                    <i class="bi bi-tag-fill me-2"></i>
+                    <span><strong>Mayorista: Bs {{ producto.precio_mayorista|floatformat:2|intcomma }}</strong> desde {{ producto.cant_min_mayorista }} unidades.
+                    {% if cliente.es_mayorista %}<br>Como cliente mayorista, este precio se aplica automaticamente.{% endif %}</span>
+                </div>
+                {% endif %}
+                {% if producto.stock_total > 0 %}
+                    <p class="text-success mb-0"><i class="bi bi-check-circle-fill"></i> {{ producto.stock_total }} disponibles</p>
+                {% else %}
+                    <p class="text-danger mb-0"><i class="bi bi-x-circle-fill"></i> Producto agotado</p>
+                {% endif %}
+            </div>
+
+            {% if producto.descripcion %}
+                <p>{{ producto.descripcion|linebreaks }}</p>
+            {% endif %}
+
+            {% if producto.stock_total > 0 %}
+            <form method="post" action="{% url 'tienda:carrito_agregar' producto.id %}" class="mt-4">
+                {% csrf_token %}
+                <div class="row g-2 align-items-end" style="max-width:400px;">
+                    <div class="col-4">
+                        <label class="form-label small">Cantidad</label>
+                        <input type="number" name="cantidad" value="1" min="1" max="{{ producto.stock_total }}" class="form-control">
+                    </div>
+                    <div class="col-8">
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="bi bi-cart-plus"></i> Agregar al carrito
+                        </button>
+                    </div>
+                </div>
+            </form>
+            {% endif %}
+
+            <hr class="my-4">
+            <ul class="list-unstyled small text-muted">
+                <li><i class="bi bi-truck"></i> Envio a todo Santa Cruz</li>
+                <li><i class="bi bi-shield-check"></i> Producto importado original</li>
+                <li><i class="bi bi-arrow-counterclockwise"></i> Devoluciones aceptadas dentro de las 48hs</li>
+            </ul>
+        </div>
+    </div>
+
+    {% if relacionados %}
+    <hr class="my-5">
+    <h3 class="mb-4">Productos relacionados</h3>
+    <div class="row g-3">
+        {% for p in relacionados %}
+        <div class="col-6 col-md-3">{% include 'tienda/_product_card.html' with p=p %}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

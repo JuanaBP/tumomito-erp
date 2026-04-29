@@ -1,0 +1,59 @@
+{% extends 'layouts/base.html' %}
+{% load humanize %}
+{% block title %}Productos{% endblock %}
+{% block page_title %}Catalogo de Productos{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between flex-wrap gap-2">
+        <form method="get" class="d-flex gap-2 flex-grow-1" style="max-width: 700px;">
+            <input type="search" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="Codigo, nombre, fabricante...">
+            <select name="categoria" class="form-select form-select-sm" style="max-width: 200px;">
+                <option value="">Todas las categorias</option>
+                {% for v, lbl in categorias %}
+                <option value="{{ v }}" {% if v == cat %}selected{% endif %}>{{ lbl }}</option>
+                {% endfor %}
+            </select>
+            <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-funnel"></i></button>
+        </form>
+        <a href="{% url 'inventario:producto_crear' %}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> Nuevo Producto</a>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead><tr><th></th><th>Codigo</th><th>Producto</th><th>Categoria</th><th>Fabricante</th><th class="text-end">Precio</th><th class="text-end">Stock</th><th></th></tr></thead>
+            <tbody>
+                {% for p in productos %}
+                <tr>
+                    <td style="width:40px;">
+                        {% if p.imagen %}<img src="{{ p.imagen.url }}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;">
+                        {% else %}<div style="width:36px;height:36px;background:#e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#6b7280;"><i class="bi bi-box"></i></div>{% endif %}
+                    </td>
+                    <td><code>{{ p.codigo }}</code></td>
+                    <td><strong>{{ p.nombre }}</strong>{% if p.subcategoria %}<br><small class="text-muted">{{ p.subcategoria }}</small>{% endif %}</td>
+                    <td><span class="badge bg-light text-dark border">{{ p.categoria }}</span></td>
+                    <td>{{ p.fabricante }}</td>
+                    <td class="text-end fw-bold text-success">Bs {{ p.precio_venta|floatformat:2|intcomma }}</td>
+                    <td class="text-end">
+                        {% if p.stock_total < 10 %}
+                            <span class="badge badge-stock-low px-2 py-1">{{ p.stock_total }}</span>
+                        {% else %}
+                            <span class="badge badge-stock-ok px-2 py-1">{{ p.stock_total }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'inventario:producto_detalle' p.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
+                        <a href="{% url 'inventario:producto_editar' p.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                        <a href="{% url 'inventario:producto_eliminar' p.pk %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center text-muted py-4">Sin productos registrados</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if productos.has_other_pages %}
+    <div class="card-footer">{% include 'layouts/_paginator.html' with page=productos %}</div>
+    {% endif %}
+</div>
+{% endblock %}

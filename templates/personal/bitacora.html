@@ -1,0 +1,30 @@
+{% extends 'layouts/base.html' %}
+{% block title %}Bitacora{% endblock %}
+{% block page_title %}Bitacora del Sistema{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header"><i class="bi bi-clock-history"></i> Registro de actividades</div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead><tr><th>Fecha y hora</th><th>Usuario</th><th>Empleado</th><th>Accion</th><th>IP</th></tr></thead>
+            <tbody>
+                {% for b in bitacora %}
+                <tr>
+                    <td><small>{{ b.fecha|date:"d/m/Y H:i:s" }}</small></td>
+                    <td><code>{{ b.login.nombre_log }}</code></td>
+                    <td>{{ b.login.empleado.persona.nombre }}</td>
+                    <td><small>{{ b.accion }}</small></td>
+                    <td><small class="text-muted">{{ b.ip|default:"-" }}</small></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-center text-muted py-4">Sin registros</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if bitacora.has_other_pages %}
+    <div class="card-footer">{% include 'layouts/_paginator.html' with page=bitacora %}</div>
+    {% endif %}
+</div>
+{% endblock %}

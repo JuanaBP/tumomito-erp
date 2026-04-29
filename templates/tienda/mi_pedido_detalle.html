@@ -1,0 +1,95 @@
+{% extends 'tienda/base_tienda.html' %}
+{% load humanize %}
+{% block title %}Pedido {{ pedido.numero }}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <a href="{% url 'tienda:mis_pedidos' %}" class="text-decoration-none small"><i class="bi bi-arrow-left"></i> Volver a mis pedidos</a>
+    <div class="row g-4 mt-2">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between flex-wrap">
+                        <div>
+                            <h3 class="mb-1">{{ pedido.numero }}</h3>
+                            <p class="text-muted mb-2">{{ pedido.fecha_pedido|date:"d 'de' F 'de' Y H:i" }}</p>
+                            <span class="estado-badge bg-{{ pedido.color_estado }} text-white">{{ pedido.get_estado_display }}</span>
+                        </div>
+                        <div class="text-end">
+                            <h3 class="text-success">Bs {{ pedido.monto_total|floatformat:2|intcomma }}</h3>
+                            {% if pedido.estado == 'pendiente' %}
+                            <a href="{% url 'tienda:pedido_pago' pedido.id %}" class="btn btn-success"><i class="bi bi-credit-card"></i> Completar pago</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Items -->
+            <div class="card mt-3">
+                <div class="card-header"><i class="bi bi-list"></i> Productos</div>
+                <table class="table mb-0">
+                    <thead><tr><th>Producto</th><th class="text-end">Cant.</th><th class="text-end">Precio</th><th class="text-end">Subtotal</th></tr></thead>
+                    <tbody>
+                        {% for d in pedido.detalles.all %}
+                        <tr>
+                            <td>{{ d.producto.nombre }}{% if d.es_mayorista %} <span class="badge bg-warning text-dark">Mayorista</span>{% endif %}</td>
+                            <td class="text-end">{{ d.cantidad }}</td>
+                            <td class="text-end">{{ d.precio_unitario|floatformat:2 }}</td>
+                            <td class="text-end fw-bold">{{ d.subtotal|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr><th colspan="3" class="text-end">Subtotal</th><th class="text-end">Bs {{ pedido.monto_subtotal|floatformat:2 }}</th></tr>
+                        <tr><th colspan="3" class="text-end">Envio</th><th class="text-end">Bs {{ pedido.monto_envio|floatformat:2 }}</th></tr>
+                        <tr class="table-light"><th colspan="3" class="text-end">TOTAL</th><th class="text-end fs-5 text-success">Bs {{ pedido.monto_total|floatformat:2 }}</th></tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Timeline -->
+            <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-clock-history"></i> Estado del pedido</div>
+                <div class="card-body">
+                    <ul class="timeline">
+                        <li class="done"><strong>Pedido creado</strong><br><small class="text-muted">{{ pedido.fecha_pedido|date:"d/m H:i" }}</small></li>
+                        <li class="{% if pedido.estado != 'pendiente' and pedido.estado != 'cancelado' %}done{% elif pedido.estado == 'pagado' %}active{% endif %}"><strong>Pago recibido</strong></li>
+                        <li class="{% if pedido.estado in 'confirmado,preparando,enviado,entregado' %}done{% elif pedido.estado == 'pagado' %}active{% endif %}"><strong>Confirmado</strong></li>
+                        <li class="{% if pedido.estado in 'enviado,entregado' %}done{% elif pedido.estado in 'confirmado,preparando' %}active{% endif %}"><strong>En preparacion / camino</strong></li>
+                        <li class="{% if pedido.estado == 'entregado' %}done{% elif pedido.estado == 'enviado' %}active{% endif %}"><strong>Entregado</strong></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Direccion -->
+            {% if pedido.direccion %}
+            <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-geo-alt"></i> Direccion de envio</div>
+                <div class="card-body small">
+                    <strong>{{ pedido.direccion.alias }}</strong><br>
+                    {{ pedido.direccion.calle }} {{ pedido.direccion.numero }}<br>
+                    {{ pedido.direccion.zona }}, {{ pedido.direccion.ciudad }}<br>
+                    Tel: {{ pedido.direccion.telefono }}
+                    {% if pedido.direccion.referencia %}<br><em class="text-muted">{{ pedido.direccion.referencia }}</em>{% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Pago -->
+            <div class="card">
+                <div class="card-header"><i class="bi bi-credit-card"></i> Pago</div>
+                <div class="card-body small">
+                    <strong>Metodo:</strong> {{ pedido.get_metodo_pago_display }}<br>
+                    {% if pedido.referencia_pago %}<strong>Referencia:</strong> {{ pedido.referencia_pago }}<br>{% endif %}
+                    {% if pedido.comprobante_pago %}
+                        <a href="{{ pedido.comprobante_pago.url }}" target="_blank" class="btn btn-sm btn-outline-primary mt-2"><i class="bi bi-image"></i> Ver comprobante</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

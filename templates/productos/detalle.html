@@ -1,0 +1,62 @@
+{% extends 'layouts/base.html' %}
+{% load humanize %}
+{% block page_title %}Producto{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-body text-center">
+                {% if producto.imagen %}
+                    <img src="{{ producto.imagen.url }}" class="img-fluid mb-3" style="max-height:200px;border-radius:8px;">
+                {% else %}
+                    <div style="height:200px;background:#f3f4f6;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:4rem;" class="mb-3"><i class="bi bi-box"></i></div>
+                {% endif %}
+                <h4>{{ producto.nombre }}</h4>
+                <p class="text-muted"><code>{{ producto.codigo }}</code></p>
+                <h3 class="text-success">Bs {{ producto.precio_venta|floatformat:2|intcomma }}</h3>
+                <a href="{% url 'inventario:producto_editar' producto.pk %}" class="btn btn-sm btn-primary mt-2"><i class="bi bi-pencil"></i> Editar</a>
+                <a href="{% url 'inventario:productos' %}" class="btn btn-sm btn-outline-secondary mt-2"><i class="bi bi-arrow-left"></i> Volver</a>
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Categoria</span> <strong>{{ producto.categoria }}</strong></li>
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Subcategoria</span> <strong>{{ producto.subcategoria|default:"-" }}</strong></li>
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Fabricante</span> <strong>{{ producto.fabricante }}</strong></li>
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Stock total</span>
+                    <strong>{% if producto.stock_total < 10 %}<span class="badge badge-stock-low px-2 py-1">{{ producto.stock_total }}</span>{% else %}<span class="badge badge-stock-ok px-2 py-1">{{ producto.stock_total }}</span>{% endif %}</strong>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-boxes"></i> Lotes en inventario (FIFO)</div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>Lote</th><th>Adquision</th><th>Vencimiento</th><th class="text-end">Recibido</th><th class="text-end">Disponible</th><th class="text-end">Costo unit.</th></tr></thead>
+                    <tbody>
+                        {% for l in lotes %}
+                        <tr>
+                            <td><code>{{ l.nro_lote }}</code></td>
+                            <td>{{ l.fecha_adquision|date:"d/m/Y" }}</td>
+                            <td>{{ l.fecha_vencimiento|date:"d/m/Y"|default:"-" }}</td>
+                            <td class="text-end">{{ l.cantidad_recibida }}</td>
+                            <td class="text-end fw-bold">{{ l.cantidad_disponible }}</td>
+                            <td class="text-end">Bs {{ l.coste_unitario|floatformat:2|intcomma }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="6" class="text-center text-muted py-4">Sin lotes registrados</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% if producto.descripcion %}
+        <div class="card mt-3">
+            <div class="card-header"><i class="bi bi-info-circle"></i> Descripcion</div>
+            <div class="card-body">{{ producto.descripcion|linebreaks }}</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends 'layouts/base.html' %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header"><i class="bi bi-file-earmark-medical"></i> {{ titulo }}</div>
+    <div class="card-body">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-6"><label class="form-label">Empleado *</label>{{ form.empleado }}</div>
+                <div class="col-md-6"><label class="form-label">Cargo laboral *</label>{{ form.cargo_laboral }}</div>
+                <div class="col-md-4"><label class="form-label">Tipo de contrato *</label>{{ form.tipo }}</div>
+                <div class="col-md-4"><label class="form-label">Turno *</label>{{ form.turno }}</div>
+                <div class="col-md-4"><label class="form-label">Salario (Bs) *</label>{{ form.salario }}</div>
+                <div class="col-md-6"><label class="form-label">Fecha inicio *</label>{{ form.fecha_inicio }}</div>
+                <div class="col-md-6"><label class="form-label">Fecha fin (opcional)</label>{{ form.fecha_fin }}</div>
+            </div>
+            {% if form.errors %}<div class="alert alert-danger mt-3">{{ form.errors }}</div>{% endif %}
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> Guardar</button>
+                <a href="{% url 'personal:contratos' %}" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

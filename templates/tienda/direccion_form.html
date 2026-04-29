@@ -1,0 +1,24 @@
+{% extends 'tienda/base_tienda.html' %}
+{% block title %}Nueva direccion{% endblock %}
+
+{% block content %}
+<div class="auth-box" style="max-width:600px;">
+    <h3 class="mb-4"><i class="bi bi-geo-alt"></i> Nueva direccion de envio</h3>
+    <form method="post">
+        {% csrf_token %}
+        <div class="row g-3">
+            <div class="col-md-6"><label class="form-label">Alias (Casa, Oficina) *</label><input name="alias" class="form-control" required value="Casa"></div>
+            <div class="col-md-6"><label class="form-label">Telefono *</label><input name="telefono" class="form-control" required></div>
+            <div class="col-md-6"><label class="form-label">Ciudad *</label><input name="ciudad" class="form-control" required value="Santa Cruz"></div>
+            <div class="col-md-6"><label class="form-label">Zona/Barrio *</label><input name="zona" class="form-control" required></div>
+            <div class="col-md-9"><label class="form-label">Calle *</label><input name="calle" class="form-control" required></div>
+            <div class="col-md-3"><label class="form-label">Numero</label><input name="numero" class="form-control"></div>
+            <div class="col-12"><label class="form-label">Referencia</label><textarea name="referencia" rows="2" class="form-control" placeholder="Casa color verde, frente a la iglesia..."></textarea></div>
+        </div>
+        <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> Guardar direccion</button>
+            <a href="{% url 'tienda:checkout' %}" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

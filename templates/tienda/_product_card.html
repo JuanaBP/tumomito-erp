@@ -1,0 +1,32 @@
+{% load humanize %}
+<a href="{% url 'tienda:producto' p.slug %}" class="text-decoration-none text-dark">
+    <div class="product-card">
+        <div class="product-img">
+            {% if p.imagen %}
+                <img src="{{ p.imagen.url }}" alt="{{ p.nombre }}">
+            {% else %}
+                <i class="bi bi-box"></i>
+            {% endif %}
+        </div>
+        <div class="product-body">
+            <div class="product-cat">{{ p.categoria }}</div>
+            <div class="product-name">{{ p.nombre }}</div>
+            <div class="d-flex justify-content-between align-items-end">
+                <div>
+                    <div class="product-price">Bs {{ p.precio_venta|floatformat:2|intcomma }}
+                        {% if p.tiene_descuento_mayorista %}
+                            <span class="badge-mayor">Mayor: Bs {{ p.precio_mayorista|floatformat:2 }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="product-stock">
+                        {% if p.stock_total > 0 %}
+                            <i class="bi bi-check-circle text-success"></i> {{ p.stock_total }} disponibles
+                        {% else %}
+                            <i class="bi bi-x-circle text-danger"></i> Agotado
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</a>

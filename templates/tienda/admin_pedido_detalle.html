@@ -1,0 +1,123 @@
+{% extends 'layouts/base.html' %}
+{% load humanize %}
+{% block page_title %}Pedido {{ pedido.numero }}{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between flex-wrap">
+                    <div>
+                        <h3>{{ pedido.numero }}</h3>
+                        <p class="text-muted">{{ pedido.fecha_pedido|date:"d/m/Y H:i" }} - <span class="badge bg-{{ pedido.color_estado }}">{{ pedido.get_estado_display }}</span></p>
+                    </div>
+                    <div>
+                        <a href="{% url 'tienda:admin_pedidos' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+                    </div>
+                </div>
+                <hr>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <h6 class="text-muted small text-uppercase">Cliente</h6>
+                        <p class="mb-1"><strong>{{ pedido.cliente.persona.nombre }}</strong> {% if pedido.cliente.es_mayorista %}<span class="badge bg-warning text-dark">Mayorista</span>{% endif %}</p>
+                        <p class="mb-0 small">CI: {{ pedido.cliente.persona.ci }} | NIT: {{ pedido.cliente.nit }}<br>Tel: {{ pedido.cliente.persona.celular }}<br>Email: {{ pedido.cliente.persona.email|default:"-" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted small text-uppercase">Direccion de envio</h6>
+                        {% if pedido.direccion %}
+                            <p class="mb-0 small"><strong>{{ pedido.direccion.alias }}</strong><br>{{ pedido.direccion.calle }} {{ pedido.direccion.numero }}<br>{{ pedido.direccion.zona }}, {{ pedido.direccion.ciudad }}<br>Tel: {{ pedido.direccion.telefono }}{% if pedido.direccion.referencia %}<br><em>{{ pedido.direccion.referencia }}</em>{% endif %}</p>
+                        {% else %}-{% endif %}
+                    </div>
+                </div>
+                {% if pedido.observaciones %}<hr><p class="mb-0"><strong>Obs:</strong> {{ pedido.observaciones }}</p>{% endif %}
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header"><i class="bi bi-list-ul"></i> Items</div>
+            <table class="table mb-0">
+                <thead><tr><th>Producto</th><th>Stock actual</th><th class="text-end">Cant.</th><th class="text-end">Precio</th><th class="text-end">Subtotal</th></tr></thead>
+                <tbody>
+                    {% for d in pedido.detalles.all %}
+                    <tr>
+                        <td><strong>{{ d.producto.nombre }}</strong> <small class="text-muted">({{ d.producto.codigo }})</small>{% if d.es_mayorista %} <span class="badge bg-warning text-dark">Mayor</span>{% endif %}</td>
+                        <td>{% if d.producto.stock_total >= d.cantidad %}<span class="badge bg-success">{{ d.producto.stock_total }} OK</span>{% else %}<span class="badge bg-danger">Solo {{ d.producto.stock_total }}</span>{% endif %}</td>
+                        <td class="text-end">{{ d.cantidad }}</td>
+                        <td class="text-end">{{ d.precio_unitario|floatformat:2 }}</td>
+                        <td class="text-end fw-bold">{{ d.subtotal|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr><th colspan="4" class="text-end">Subtotal</th><th class="text-end">Bs {{ pedido.monto_subtotal|floatformat:2 }}</th></tr>
+                    <tr><th colspan="4" class="text-end">Envio</th><th class="text-end">Bs {{ pedido.monto_envio|floatformat:2 }}</th></tr>
+                    <tr class="table-light"><th colspan="4" class="text-end">TOTAL</th><th class="text-end fs-5 text-success">Bs {{ pedido.monto_total|floatformat:2 }}</th></tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Pago -->
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-credit-card"></i> Pago: {{ pedido.get_metodo_pago_display }}</div>
+            <div class="card-body">
+                {% if pedido.referencia_pago %}<p class="mb-2 small"><strong>Referencia:</strong> {{ pedido.referencia_pago }}</p>{% endif %}
+                {% if pedido.comprobante_pago %}
+                    <a href="{{ pedido.comprobante_pago.url }}" target="_blank" class="d-block">
+                        <img src="{{ pedido.comprobante_pago.url }}" class="img-fluid rounded border" alt="Comprobante">
+                    </a>
+                {% else %}
+                    <p class="text-muted small mb-0">Sin comprobante adjunto.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="card mb-3">
+            <div class="card-header"><i class="bi bi-gear"></i> Acciones</div>
+            <div class="card-body d-grid gap-2">
+                {% if pedido.estado == 'pagado' or pedido.estado == 'pendiente' %}
+                <form method="post" action="{% url 'tienda:admin_pedido_confirmar' pedido.pk %}" onsubmit="return confirm('Confirmar el pago y descontar inventario? Se generara una nota de venta.');">
+                    {% csrf_token %}
+                    <button class="btn btn-success w-100"><i class="bi bi-check2-circle"></i> Confirmar pago y generar venta</button>
+                </form>
+                {% endif %}
+
+                {% if pedido.estado == 'confirmado' %}
+                <form method="post" action="{% url 'tienda:admin_pedido_estado' pedido.pk %}">
+                    {% csrf_token %}<input type="hidden" name="estado" value="preparando">
+                    <button class="btn btn-primary w-100"><i class="bi bi-box"></i> Marcar como preparando</button>
+                </form>
+                {% endif %}
+
+                {% if pedido.estado == 'preparando' %}
+                <form method="post" action="{% url 'tienda:admin_pedido_estado' pedido.pk %}">
+                    {% csrf_token %}<input type="hidden" name="estado" value="enviado">
+                    <button class="btn btn-info w-100 text-white"><i class="bi bi-truck"></i> Marcar como enviado</button>
+                </form>
+                {% endif %}
+
+                {% if pedido.estado == 'enviado' %}
+                <form method="post" action="{% url 'tienda:admin_pedido_estado' pedido.pk %}">
+                    {% csrf_token %}<input type="hidden" name="estado" value="entregado">
+                    <button class="btn btn-success w-100"><i class="bi bi-check-all"></i> Marcar como entregado</button>
+                </form>
+                {% endif %}
+
+                {% if pedido.estado not in 'entregado,cancelado' %}
+                <form method="post" action="{% url 'tienda:admin_pedido_estado' pedido.pk %}" onsubmit="return confirm('Cancelar este pedido?');">
+                    {% csrf_token %}<input type="hidden" name="estado" value="cancelado">
+                    <button class="btn btn-outline-danger w-100"><i class="bi bi-x-circle"></i> Cancelar pedido</button>
+                </form>
+                {% endif %}
+
+                {% if pedido.nota_venta %}
+                <a href="{% url 'ventas:detalle' pedido.nota_venta.id %}" class="btn btn-outline-primary"><i class="bi bi-receipt"></i> Ver Nota de Venta NV-{{ pedido.nota_venta.id|stringformat:"06d" }}</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,13 @@
+Django==5.0.6
+Pillow==10.3.0
+psycopg2-binary==2.9.9
+django-crispy-forms==2.1
+crispy-bootstrap5==2024.2
+python-decouple==3.8
+reportlab==4.2.0
+openpyxl==3.1.2
+
+# Production
+gunicorn==22.0.0
+whitenoise==6.7.0
+dj-database-url==2.2.0

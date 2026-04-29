@@ -1,0 +1,54 @@
+{% extends 'layouts/base.html' %}
+{% load humanize %}
+{% block title %}{{ cliente.persona.nombre }}{% endblock %}
+{% block page_title %}Detalle del Cliente{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="avatar mx-auto mb-3" style="width:80px;height:80px;font-size:2rem;">
+                    {{ cliente.persona.nombre|first|upper }}
+                </div>
+                <h4 class="mb-1">{{ cliente.persona.nombre }}</h4>
+                <p class="text-muted mb-3">{{ cliente.razon_social|default:"Cliente particular" }}</p>
+                <div class="d-flex justify-content-center gap-2">
+                    <a href="{% url 'clientes:editar' cliente.pk %}" class="btn btn-sm btn-primary"><i class="bi bi-pencil"></i> Editar</a>
+                    <a href="{% url 'clientes:lista' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+                </div>
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted"><i class="bi bi-card-text"></i> CI</span> <strong>{{ cliente.persona.ci }}</strong></li>
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted"><i class="bi bi-receipt"></i> NIT</span> <strong>{{ cliente.nit }}</strong></li>
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted"><i class="bi bi-flag"></i> Nacionalidad</span> <strong>{{ cliente.persona.nacionalidad }}</strong></li>
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted"><i class="bi bi-telephone"></i> Celular</span> <strong>{{ cliente.persona.celular }}</strong></li>
+                <li class="list-group-item d-flex justify-content-between"><span class="text-muted"><i class="bi bi-envelope"></i> Email</span> <strong>{{ cliente.persona.email|default:"-" }}</strong></li>
+                <li class="list-group-item"><span class="text-muted"><i class="bi bi-geo-alt"></i> Direccion</span><br><strong>{{ cliente.persona.direccion|default:"No registrada" }}</strong></li>
+            </ul>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-clock-history"></i> Historial de compras</div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>Nro</th><th>Fecha</th><th class="text-end">Monto</th><th></th></tr></thead>
+                    <tbody>
+                        {% for v in ventas %}
+                        <tr>
+                            <td><code>NV-{{ v.id|stringformat:"06d" }}</code></td>
+                            <td>{{ v.fecha|date:"d/m/Y" }}</td>
+                            <td class="text-end fw-bold">Bs {{ v.monto_total|floatformat:2|intcomma }}</td>
+                            <td><a href="{% url 'ventas:detalle' v.id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-center text-muted py-4">Sin compras todavia</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

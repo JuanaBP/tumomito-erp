@@ -1,0 +1,62 @@
+{% extends 'layouts/base.html' %}
+{% load humanize %}
+{% block page_title %}Nota de Venta NV-{{ venta.id|stringformat:"06d" }}{% endblock %}
+
+{% block content %}
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between flex-wrap">
+            <div>
+                <h3 class="mb-1">{{ EMPRESA_NOMBRE }}</h3>
+                <p class="text-muted mb-0">Nota de venta No. <strong>NV-{{ venta.id|stringformat:"06d" }}</strong></p>
+                <p class="text-muted small">{{ venta.fecha|date:"d 'de' F 'de' Y" }} - {{ venta.hora|time:"H:i" }}</p>
+            </div>
+            <div class="text-end">
+                <button class="btn btn-sm btn-outline-primary" onclick="window.print()"><i class="bi bi-printer"></i> Imprimir</button>
+                <a href="{% url 'ventas:lista' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+            </div>
+        </div>
+        <hr>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <h6 class="text-muted small text-uppercase">Cliente</h6>
+                <p class="mb-1"><strong>{{ venta.cliente.persona.nombre }}</strong></p>
+                <p class="mb-1 small">CI: {{ venta.cliente.persona.ci }} | NIT: {{ venta.cliente.nit }}</p>
+                <p class="mb-1 small">{{ venta.cliente.persona.celular }}</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <h6 class="text-muted small text-uppercase">Vendedor</h6>
+                <p class="mb-1"><strong>{{ venta.empleado.persona.nombre }}</strong></p>
+                <p class="small text-muted">Moneda: {{ venta.moneda }} - TC: {{ venta.tipo_cambio }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><i class="bi bi-list-ul"></i> Items vendidos</div>
+    <div class="card-body p-0">
+        <table class="table mb-0">
+            <thead><tr><th>#</th><th>Producto</th><th>Lote</th><th class="text-end">Cantidad</th><th class="text-end">Precio</th><th class="text-end">Subtotal</th></tr></thead>
+            <tbody>
+                {% for d in detalles %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><strong>{{ d.inventario.producto.nombre }}</strong><br><small class="text-muted">{{ d.inventario.producto.codigo }}</small></td>
+                    <td><code>{{ d.inventario.nro_lote }}</code></td>
+                    <td class="text-end">{{ d.cantidad }}</td>
+                    <td class="text-end">{{ d.precio|floatformat:2|intcomma }}</td>
+                    <td class="text-end fw-bold">{{ d.subtotal|floatformat:2|intcomma }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="table-light">
+                    <th colspan="5" class="text-end">TOTAL ({{ venta.moneda }})</th>
+                    <th class="text-end fs-5 text-success">{{ venta.monto_total|floatformat:2|intcomma }}</th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+{% endblock %}

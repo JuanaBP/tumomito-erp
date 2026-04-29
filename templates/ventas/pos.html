@@ -1,0 +1,228 @@
+{% extends 'layouts/base.html' %}
+{% block title %}Punto de Venta{% endblock %}
+{% block page_title %}Punto de Venta{% endblock %}
+
+{% block content %}
+<div class="pos-grid">
+    <!-- Catalogo -->
+    <div>
+        <div class="card mb-3">
+            <div class="card-body py-2">
+                <input type="search" id="posSearch" class="form-control" placeholder="Buscar producto por nombre o codigo... (Enter para agregar primero)">
+            </div>
+        </div>
+        <div id="posProducts" class="pos-products"></div>
+    </div>
+
+    <!-- Carrito -->
+    <div class="pos-cart">
+        <div class="card-header"><i class="bi bi-cart3"></i> Carrito</div>
+
+        <div class="px-3 pt-3">
+            <label class="form-label small text-muted mb-1">Cliente</label>
+            <select id="posCliente" class="form-select form-select-sm">
+                <option value="">-- Selecciona cliente --</option>
+                {% for c in clientes %}
+                <option value="{{ c.pk }}">{{ c.persona.nombre }} ({{ c.nit }})</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="pos-cart-items" id="posCart">
+            <p class="text-muted text-center py-4 small">Carrito vacio</p>
+        </div>
+
+        <div class="border-top p-3 bg-light">
+            <div class="d-flex justify-content-between mb-2">
+                <span>Items:</span>
+                <span id="posItemCount">0</span>
+            </div>
+            <div class="d-flex justify-content-between mb-3">
+                <strong class="fs-5">Total:</strong>
+                <strong class="fs-4 text-success">Bs <span id="posTotal">0.00</span></strong>
+            </div>
+            <button id="posConfirmBtn" class="btn btn-success btn-lg w-100" disabled>
+                <i class="bi bi-check2-circle"></i> Confirmar venta
+            </button>
+            <button id="posClearBtn" class="btn btn-outline-secondary w-100 mt-2">
+                <i class="bi bi-x-lg"></i> Vaciar carrito
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmacion -->
+<div class="modal fade" id="posModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center py-5">
+                <i class="bi bi-check-circle-fill text-success" style="font-size:4rem;"></i>
+                <h3 class="mt-3">Venta exitosa</h3>
+                <p class="text-muted">Nota de venta <strong id="posVentaNro">-</strong></p>
+                <p class="fs-3 text-success fw-bold">Bs <span id="posVentaTotal">0.00</span></p>
+                <a id="posVerBtn" href="#" class="btn btn-primary"><i class="bi bi-eye"></i> Ver detalle</a>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Nueva venta</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const cart = new Map(); // producto_id -> {producto, cantidad}
+const $products = document.getElementById('posProducts');
+const $cart = document.getElementById('posCart');
+const $total = document.getElementById('posTotal');
+const $itemCount = document.getElementById('posItemCount');
+const $confirm = document.getElementById('posConfirmBtn');
+const $cliente = document.getElementById('posCliente');
+const $search = document.getElementById('posSearch');
+
+let productosCache = [];
+
+async function cargarProductos(q = '') {
+    const res = await fetch(`{% url 'ventas:api_productos' %}?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    productosCache = data.productos;
+    renderProductos();
+}
+
+function renderProductos() {
+    if (!productosCache.length) {
+        $products.innerHTML = '<p class="text-muted text-center py-4">No hay productos disponibles</p>';
+        return;
+    }
+    $products.innerHTML = productosCache.map(p => `
+        <div class="pos-product-card" data-id="${p.id}">
+            <div class="codigo">${p.codigo}</div>
+            <div class="nombre">${p.nombre}</div>
+            <div class="precio">Bs ${p.precio.toFixed(2)}</div>
+            <div class="stock"><i class="bi bi-box"></i> ${p.stock}</div>
+        </div>
+    `).join('');
+    document.querySelectorAll('.pos-product-card').forEach(el => {
+        el.addEventListener('click', () => agregarAlCarrito(parseInt(el.dataset.id)));
+    });
+}
+
+function agregarAlCarrito(id) {
+    const p = productosCache.find(x => x.id === id);
+    if (!p) return;
+    const existing = cart.get(id);
+    const cantidad = existing ? existing.cantidad + 1 : 1;
+    if (cantidad > p.stock) {
+        alert(`Stock insuficiente. Disponible: ${p.stock}`);
+        return;
+    }
+    cart.set(id, { producto: p, cantidad });
+    renderCart();
+}
+
+function eliminar(id) {
+    cart.delete(id);
+    renderCart();
+}
+
+function ajustarCantidad(id, delta) {
+    const item = cart.get(id);
+    if (!item) return;
+    const nueva = item.cantidad + delta;
+    if (nueva <= 0) {
+        cart.delete(id);
+    } else if (nueva > item.producto.stock) {
+        alert(`Stock insuficiente. Disponible: ${item.producto.stock}`);
+        return;
+    } else {
+        item.cantidad = nueva;
+    }
+    renderCart();
+}
+
+function renderCart() {
+    if (cart.size === 0) {
+        $cart.innerHTML = '<p class="text-muted text-center py-4 small">Carrito vacio</p>';
+    } else {
+        $cart.innerHTML = Array.from(cart.values()).map(({ producto, cantidad }) => `
+            <div class="pos-cart-item">
+                <div style="flex:1; min-width:0;">
+                    <div class="fw-bold text-truncate">${producto.nombre}</div>
+                    <small class="text-muted">Bs ${producto.precio.toFixed(2)} c/u</small>
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="ajustarCantidad(${producto.id}, -1)">-</button>
+                    <span class="px-2 fw-bold">${cantidad}</span>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="ajustarCantidad(${producto.id}, 1)">+</button>
+                    <button class="btn btn-sm btn-outline-danger ms-2" onclick="eliminar(${producto.id})"><i class="bi bi-trash"></i></button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    const total = Array.from(cart.values()).reduce((s, it) => s + it.cantidad * it.producto.precio, 0);
+    const items = Array.from(cart.values()).reduce((s, it) => s + it.cantidad, 0);
+    $total.textContent = total.toFixed(2);
+    $itemCount.textContent = items;
+    $confirm.disabled = cart.size === 0 || !$cliente.value;
+}
+
+$cliente.addEventListener('change', renderCart);
+$search.addEventListener('input', e => cargarProductos(e.target.value));
+
+document.getElementById('posClearBtn').addEventListener('click', () => {
+    if (confirm('Vaciar el carrito?')) {
+        cart.clear();
+        renderCart();
+    }
+});
+
+$confirm.addEventListener('click', async () => {
+    if (!$cliente.value || cart.size === 0) return;
+    $confirm.disabled = true;
+    $confirm.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Procesando...';
+
+    const items = Array.from(cart.values()).map(({ producto, cantidad }) => ({
+        producto_id: producto.id,
+        cantidad: cantidad,
+        precio: producto.precio,
+    }));
+
+    try {
+        const res = await fetch(`{% url 'ventas:pos_confirmar' %}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken'),
+            },
+            body: JSON.stringify({ cliente_id: $cliente.value, items }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+            document.getElementById('posVentaNro').textContent = `NV-${String(data.venta_id).padStart(6, '0')}`;
+            document.getElementById('posVentaTotal').textContent = data.total.toFixed(2);
+            document.getElementById('posVerBtn').href = `/ventas/${data.venta_id}/`;
+            new bootstrap.Modal(document.getElementById('posModal')).show();
+            cart.clear();
+            renderCart();
+            cargarProductos();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    } catch (e) {
+        alert('Error de conexion: ' + e.message);
+    } finally {
+        $confirm.disabled = false;
+        $confirm.innerHTML = '<i class="bi bi-check2-circle"></i> Confirmar venta';
+    }
+});
+
+function getCookie(name) {
+    const m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+    return m ? m[2] : '';
+}
+
+// Inicializar
+{% csrf_token %}
+cargarProductos();
+</script>
+{% endblock %}

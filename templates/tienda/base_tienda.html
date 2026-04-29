@@ -1,0 +1,151 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ EMPRESA_NOMBRE }} - Tienda Online{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'css/tienda.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="shop-topbar bg-dark text-white py-1 small">
+    <div class="container d-flex justify-content-between">
+        <span><i class="bi bi-truck"></i> Envios a todo Santa Cruz - Pago en Bs.</span>
+        <span class="d-none d-md-inline">
+            <i class="bi bi-whatsapp"></i> 70123456 |
+            <i class="bi bi-envelope"></i> ventas@tumomito.bo
+        </span>
+    </div>
+</div>
+
+<!-- NAVBAR -->
+<nav class="shop-navbar">
+    <div class="container d-flex align-items-center py-3 gap-3">
+        <a href="{% url 'tienda:home' %}" class="shop-brand text-decoration-none">
+            <i class="bi bi-shop-window"></i> {{ EMPRESA_NOMBRE }}
+            <small class="d-block text-muted" style="font-size:0.7rem;font-weight:400;">{{ EMPRESA_SLOGAN }}</small>
+        </a>
+
+        <form action="{% url 'tienda:catalogo' %}" method="get" class="flex-grow-1 d-none d-md-block mx-3">
+            <div class="input-group">
+                <input type="search" name="q" class="form-control" placeholder="Que estas buscando?" value="{{ request.GET.q }}">
+                <button class="btn btn-primary"><i class="bi bi-search"></i></button>
+            </div>
+        </form>
+
+        <div class="d-flex align-items-center gap-3">
+            {% if user.is_authenticated %}
+                <div class="dropdown">
+                    <button class="btn btn-link text-dark dropdown-toggle p-0" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle fs-4"></i>
+                        <span class="d-none d-md-inline">{{ user.first_name|default:user.username }}</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{% url 'tienda:mis_pedidos' %}"><i class="bi bi-bag"></i> Mis pedidos</a></li>
+                        {% if user.is_staff %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'dashboard:home' %}"><i class="bi bi-speedometer2"></i> Panel ERP</a></li>
+                        {% endif %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form action="{% url 'tienda:logout' %}" method="post" class="px-2">
+                                {% csrf_token %}
+                                <button class="dropdown-item text-danger"><i class="bi bi-box-arrow-right"></i> Salir</button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            {% else %}
+                <a href="{% url 'tienda:login' %}" class="btn btn-link text-dark p-0 text-decoration-none">
+                    <i class="bi bi-person fs-4"></i> <span class="d-none d-md-inline">Ingresar</span>
+                </a>
+            {% endif %}
+
+            <a href="{% url 'tienda:carrito' %}" class="btn btn-link text-dark p-0 position-relative text-decoration-none">
+                <i class="bi bi-cart3 fs-3"></i>
+                {% with c=carrito|default_if_none:"" %}
+                    {% if c and c.total_items > 0 %}
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{{ c.total_items }}</span>
+                    {% endif %}
+                {% endwith %}
+            </a>
+        </div>
+    </div>
+
+    <!-- Categorias -->
+    <div class="shop-categorias bg-light border-top border-bottom">
+        <div class="container">
+            <div class="d-flex flex-wrap gap-3 py-2 small">
+                <a href="{% url 'tienda:catalogo' %}" class="text-decoration-none text-dark"><i class="bi bi-grid"></i> Todo</a>
+                <a href="{% url 'tienda:catalogo' %}?categoria=Tecnologia" class="text-decoration-none text-dark">Tecnologia</a>
+                <a href="{% url 'tienda:catalogo' %}?categoria=Hogar" class="text-decoration-none text-dark">Hogar</a>
+                <a href="{% url 'tienda:catalogo' %}?categoria=Juguetes" class="text-decoration-none text-dark">Juguetes</a>
+                <a href="{% url 'tienda:catalogo' %}?categoria=Ropa" class="text-decoration-none text-dark">Ropa</a>
+                <a href="{% url 'tienda:catalogo' %}?categoria=Belleza" class="text-decoration-none text-dark">Belleza</a>
+                <a href="{% url 'tienda:catalogo' %}?categoria=Papeleria" class="text-decoration-none text-dark">Papeleria</a>
+                <a href="{% url 'tienda:catalogo' %}?categoria=Ferreteria" class="text-decoration-none text-dark">Ferreteria</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- MENSAJES -->
+{% if messages %}
+<div class="container mt-3">
+    {% for msg in messages %}
+        <div class="alert alert-{{ msg.tags }} alert-dismissible fade show">
+            {{ msg }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- CONTENIDO -->
+<main class="shop-content">
+    {% block content %}{% endblock %}
+</main>
+
+<!-- FOOTER -->
+<footer class="shop-footer bg-dark text-white pt-5 pb-3 mt-5">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <h5><i class="bi bi-shop-window"></i> {{ EMPRESA_NOMBRE }}</h5>
+                <p class="text-muted small">{{ EMPRESA_SLOGAN }}. Importadora de productos diversos para minoristas y mayoristas en Bolivia.</p>
+            </div>
+            <div class="col-md-4">
+                <h6>Atencion al cliente</h6>
+                <ul class="list-unstyled small">
+                    <li><i class="bi bi-whatsapp"></i> WhatsApp: 70123456</li>
+                    <li><i class="bi bi-envelope"></i> ventas@tumomito.bo</li>
+                    <li><i class="bi bi-clock"></i> Lun a Sab 8:00 - 19:00</li>
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <h6>Mi cuenta</h6>
+                <ul class="list-unstyled small">
+                    {% if user.is_authenticated %}
+                        <li><a href="{% url 'tienda:mis_pedidos' %}" class="text-white-50">Mis pedidos</a></li>
+                    {% else %}
+                        <li><a href="{% url 'tienda:login' %}" class="text-white-50">Ingresar</a></li>
+                        <li><a href="{% url 'tienda:registro' %}" class="text-white-50">Registrate</a></li>
+                    {% endif %}
+                    <li><a href="{% url 'tienda:catalogo' %}" class="text-white-50">Catalogo completo</a></li>
+                </ul>
+            </div>
+        </div>
+        <hr class="border-secondary">
+        <p class="text-center text-muted small mb-0">&copy; {{ EMPRESA_ANIO }} {{ EMPRESA_NOMBRE }} - Todos los derechos reservados</p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

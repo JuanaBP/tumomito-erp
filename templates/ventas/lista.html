@@ -1,0 +1,40 @@
+{% extends 'layouts/base.html' %}
+{% load humanize %}
+{% block title %}Ventas{% endblock %}
+{% block page_title %}Notas de Venta{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between flex-wrap gap-2">
+        <form method="get" class="d-flex gap-2 flex-grow-1" style="max-width: 500px;">
+            <input type="search" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="Cliente, NIT, nro de venta...">
+            <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-search"></i></button>
+        </form>
+        <span class="align-self-center small text-muted me-2">Total: <strong class="text-success">Bs {{ total_mes|floatformat:2|intcomma }}</strong></span>
+        <a href="{% url 'ventas:pos' %}" class="btn btn-sm btn-primary"><i class="bi bi-cart-plus"></i> Nueva Venta (POS)</a>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead><tr><th>Nro</th><th>Fecha</th><th>Cliente</th><th>Vendedor</th><th>Moneda</th><th class="text-end">Total</th><th></th></tr></thead>
+            <tbody>
+                {% for v in ventas %}
+                <tr>
+                    <td><code>NV-{{ v.id|stringformat:"06d" }}</code></td>
+                    <td>{{ v.fecha|date:"d/m/Y" }} {{ v.hora|time:"H:i" }}</td>
+                    <td>{{ v.cliente.persona.nombre }}</td>
+                    <td>{{ v.empleado.persona.nombre }}</td>
+                    <td>{{ v.moneda }}</td>
+                    <td class="text-end fw-bold text-success">{{ v.monto_total|floatformat:2|intcomma }}</td>
+                    <td><a href="{% url 'ventas:detalle' v.id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center text-muted py-4">Sin ventas registradas</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if ventas.has_other_pages %}
+    <div class="card-footer">{% include 'layouts/_paginator.html' with page=ventas %}</div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends 'layouts/base.html' %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header"><i class="bi bi-truck"></i> {{ titulo }}</div>
+    <div class="card-body">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-8"><label class="form-label">Empresa *</label>{{ form.empresa }}</div>
+                <div class="col-md-4"><label class="form-label">NIT *</label>{{ form.nit }}</div>
+                <div class="col-md-6"><label class="form-label">Representante legal *</label>{{ form.representante_legal }}</div>
+                <div class="col-md-3"><label class="form-label">Pais *</label>{{ form.pais }}</div>
+                <div class="col-md-3"><label class="form-label">Telefono *</label>{{ form.telefono }}</div>
+                <div class="col-md-6"><label class="form-label">Email</label>{{ form.email }}</div>
+                <div class="col-md-6 d-flex align-items-end">
+                    <div class="form-check"><label class="form-check-label">{{ form.activo }} Proveedor activo</label></div>
+                </div>
+                <div class="col-12"><label class="form-label">Direccion</label>{{ form.direccion }}</div>
+            </div>
+            {% if form.errors %}<div class="alert alert-danger mt-3">{{ form.errors }}</div>{% endif %}
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> Guardar</button>
+                <a href="{% url 'proveedores:lista' %}" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

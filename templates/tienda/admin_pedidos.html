@@ -1,0 +1,51 @@
+{% extends 'layouts/base.html' %}
+{% load humanize %}
+{% block title %}Pedidos Online{% endblock %}
+{% block page_title %}Pedidos Online (Tienda){% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="kpi-card"><div class="kpi-icon bg-warning"><i class="bi bi-hourglass-split"></i></div><div class="kpi-label">Pendientes pago</div><div class="kpi-value">{{ resumen.pendientes }}</div></div></div>
+    <div class="col-md-3"><div class="kpi-card"><div class="kpi-icon bg-info"><i class="bi bi-receipt"></i></div><div class="kpi-label">Pago reportado</div><div class="kpi-value">{{ resumen.pagados }}</div></div></div>
+    <div class="col-md-3"><div class="kpi-card"><div class="kpi-icon bg-primary"><i class="bi bi-box"></i></div><div class="kpi-label">Preparando</div><div class="kpi-value">{{ resumen.preparando }}</div></div></div>
+    <div class="col-md-3"><div class="kpi-card"><div class="kpi-icon bg-success"><i class="bi bi-truck"></i></div><div class="kpi-label">En camino</div><div class="kpi-value">{{ resumen.enviados }}</div></div></div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between flex-wrap gap-2">
+        <form method="get">
+            <select name="estado" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">Todos los estados</option>
+                {% for v, lbl in estados %}
+                <option value="{{ v }}" {% if v == estado %}selected{% endif %}>{{ lbl }}</option>
+                {% endfor %}
+            </select>
+        </form>
+        <a href="/tienda/" target="_blank" class="btn btn-sm btn-outline-primary"><i class="bi bi-box-arrow-up-right"></i> Ver tienda publica</a>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead><tr><th>Numero</th><th>Fecha</th><th>Cliente</th><th>Tipo</th><th>Pago</th><th>Estado</th><th class="text-end">Total</th><th></th></tr></thead>
+            <tbody>
+                {% for p in pedidos %}
+                <tr>
+                    <td><code>{{ p.numero }}</code></td>
+                    <td>{{ p.fecha_pedido|date:"d/m/Y H:i" }}</td>
+                    <td>{{ p.cliente.persona.nombre }}</td>
+                    <td>{% if p.cliente.es_mayorista %}<span class="badge bg-warning text-dark">Mayorista</span>{% else %}<span class="badge bg-light text-dark border">Minorista</span>{% endif %}</td>
+                    <td><small>{{ p.get_metodo_pago_display }}</small></td>
+                    <td><span class="badge bg-{{ p.color_estado }}">{{ p.get_estado_display }}</span></td>
+                    <td class="text-end fw-bold">Bs {{ p.monto_total|floatformat:2|intcomma }}</td>
+                    <td><a href="{% url 'tienda:admin_pedido_detalle' p.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center text-muted py-4">No hay pedidos</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if pedidos.has_other_pages %}
+    <div class="card-footer">{% include 'layouts/_paginator.html' with page=pedidos %}</div>
+    {% endif %}
+</div>
+{% endblock %}

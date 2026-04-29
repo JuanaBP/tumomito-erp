@@ -1,0 +1,32 @@
+{% extends 'layouts/base.html' %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header"><i class="bi bi-box-seam"></i> {{ titulo }}</div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-3"><label class="form-label">Codigo SKU *</label>{{ form.codigo }}</div>
+                <div class="col-md-9"><label class="form-label">Nombre *</label>{{ form.nombre }}</div>
+                <div class="col-md-4"><label class="form-label">Categoria *</label>{{ form.categoria }}</div>
+                <div class="col-md-4"><label class="form-label">Subcategoria</label>{{ form.subcategoria }}</div>
+                <div class="col-md-4"><label class="form-label">Fabricante *</label>{{ form.fabricante }}</div>
+                <div class="col-md-4"><label class="form-label">Precio de venta (Bs) *</label>{{ form.precio_venta }}</div>
+                <div class="col-md-4"><label class="form-label">Imagen</label>{{ form.imagen }}</div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <div class="form-check"><label class="form-check-label">{{ form.activo }} Producto activo</label></div>
+                </div>
+                <div class="col-12"><label class="form-label">Descripcion</label>{{ form.descripcion }}</div>
+            </div>
+            {% if form.errors %}<div class="alert alert-danger mt-3">{{ form.errors }}</div>{% endif %}
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> Guardar</button>
+                <a href="{% url 'inventario:productos' %}" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

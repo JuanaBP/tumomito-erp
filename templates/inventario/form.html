@@ -1,0 +1,30 @@
+{% extends 'layouts/base.html' %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header"><i class="bi bi-boxes"></i> {{ titulo }}</div>
+    <div class="card-body">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-8"><label class="form-label">Producto *</label>{{ form.producto }}</div>
+                <div class="col-md-4"><label class="form-label">Nro. Lote *</label>{{ form.nro_lote }}</div>
+                <div class="col-md-3"><label class="form-label">Cant. recibida *</label>{{ form.cantidad_recibida }}</div>
+                <div class="col-md-3"><label class="form-label">Cant. disponible *</label>{{ form.cantidad_disponible }}</div>
+                <div class="col-md-3"><label class="form-label">Costo unitario *</label>{{ form.coste_unitario }}</div>
+                <div class="col-md-3"><label class="form-label">Costo final *</label>{{ form.coste_final }}</div>
+                <div class="col-md-4"><label class="form-label">Fecha adquision *</label>{{ form.fecha_adquision }}</div>
+                <div class="col-md-4"><label class="form-label">Fecha emision</label>{{ form.fecha_emision }}</div>
+                <div class="col-md-4"><label class="form-label">Fecha vencimiento</label>{{ form.fecha_vencimiento }}</div>
+            </div>
+            {% if form.errors %}<div class="alert alert-danger mt-3">{{ form.errors }}</div>{% endif %}
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> Guardar</button>
+                <a href="{% url 'inventario:lotes' %}" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

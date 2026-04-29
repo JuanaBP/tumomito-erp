@@ -1,0 +1,75 @@
+{% extends 'tienda/base_tienda.html' %}
+{% load humanize %}
+{% block title %}{{ EMPRESA_NOMBRE }} - Tienda Online{% endblock %}
+
+{% block content %}
+<!-- HERO -->
+<section class="shop-hero">
+    <div class="container">
+        <h1>Importadora {{ EMPRESA_NOMBRE }}</h1>
+        <p>Tecnologia, hogar, juguetes, ropa y mas - precios mayoristas y minoristas</p>
+        <a href="{% url 'tienda:catalogo' %}" class="btn btn-light btn-lg mt-2">
+            <i class="bi bi-grid"></i> Ver catalogo completo
+        </a>
+    </div>
+</section>
+
+<!-- DESTACADOS -->
+{% if destacados %}
+<section class="shop-section bg-light">
+    <div class="container">
+        <h2 class="shop-section-title"><i class="bi bi-star-fill text-warning"></i> Productos destacados</h2>
+        <div class="row g-3">
+            {% for p in destacados %}
+            <div class="col-6 col-md-4 col-lg-3">{% include 'tienda/_product_card.html' with p=p %}</div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- BENEFICIOS -->
+<section class="shop-section">
+    <div class="container">
+        <div class="row g-4 text-center">
+            <div class="col-md-3 col-6">
+                <i class="bi bi-truck text-primary" style="font-size:2.5rem;"></i>
+                <h6 class="mt-2">Envio rapido</h6>
+                <p class="text-muted small mb-0">A todo Santa Cruz en 24-48hs</p>
+            </div>
+            <div class="col-md-3 col-6">
+                <i class="bi bi-credit-card text-primary" style="font-size:2.5rem;"></i>
+                <h6 class="mt-2">Pago facil</h6>
+                <p class="text-muted small mb-0">Transferencia, QR o contra entrega</p>
+            </div>
+            <div class="col-md-3 col-6">
+                <i class="bi bi-tags text-primary" style="font-size:2.5rem;"></i>
+                <h6 class="mt-2">Precio mayorista</h6>
+                <p class="text-muted small mb-0">Descuento desde 12 unidades</p>
+            </div>
+            <div class="col-md-3 col-6">
+                <i class="bi bi-shield-check text-primary" style="font-size:2.5rem;"></i>
+                <h6 class="mt-2">Productos garantizados</h6>
+                <p class="text-muted small mb-0">Importacion directa</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- NUEVOS -->
+{% if nuevos %}
+<section class="shop-section bg-light">
+    <div class="container">
+        <h2 class="shop-section-title"><i class="bi bi-bag-plus text-primary"></i> Productos nuevos</h2>
+        <div class="row g-3">
+            {% for p in nuevos %}
+            <div class="col-6 col-md-4 col-lg-3">{% include 'tienda/_product_card.html' with p=p %}</div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-4">
+            <a href="{% url 'tienda:catalogo' %}" class="btn btn-outline-primary">Ver todos los productos <i class="bi bi-arrow-right"></i></a>
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endblock %}

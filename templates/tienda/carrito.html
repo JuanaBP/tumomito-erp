@@ -1,0 +1,72 @@
+{% extends 'tienda/base_tienda.html' %}
+{% load humanize %}
+{% block title %}Carrito - {{ EMPRESA_NOMBRE }}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h2 class="mb-4"><i class="bi bi-cart3"></i> Tu carrito</h2>
+
+    {% if carrito.total_items == 0 %}
+        <div class="text-center py-5">
+            <i class="bi bi-cart-x" style="font-size:4rem; color:#d1d5db;"></i>
+            <h4 class="mt-3 text-muted">Tu carrito esta vacio</h4>
+            <p class="text-muted">Explora nuestro catalogo y agrega productos.</p>
+            <a href="{% url 'tienda:catalogo' %}" class="btn btn-primary mt-2"><i class="bi bi-grid"></i> Ir al catalogo</a>
+        </div>
+    {% else %}
+    <div class="row g-4">
+        <div class="col-lg-8">
+            {% for item in carrito.items %}
+            <div class="cart-item">
+                <div class="cart-item-img">
+                    {% if item.producto.imagen %}<img src="{{ item.producto.imagen.url }}">{% else %}<i class="bi bi-box"></i>{% endif %}
+                </div>
+                <div class="flex-grow-1">
+                    <a href="{% url 'tienda:producto' item.producto.slug %}" class="text-decoration-none text-dark">
+                        <h6 class="mb-1">{{ item.producto.nombre }}</h6>
+                    </a>
+                    <small class="text-muted">{{ item.producto.codigo }}</small>
+                    {% if item.es_mayorista %}<br><span class="badge bg-warning text-dark"><i class="bi bi-tag"></i> Precio mayorista aplicado</span>{% endif %}
+                    <div class="d-flex align-items-center gap-2 mt-2">
+                        <form method="post" action="{% url 'tienda:carrito_agregar' item.producto.id %}" class="d-flex align-items-center gap-1">
+                            {% csrf_token %}
+                            <input type="hidden" name="sumar" value="0">
+                            <input type="number" name="cantidad" value="{{ item.cantidad }}" min="1" max="{{ item.stock_disponible }}"
+                                   class="form-control form-control-sm" style="width:70px;">
+                            <button class="btn btn-sm btn-outline-secondary" title="Actualizar"><i class="bi bi-arrow-clockwise"></i></button>
+                        </form>
+                        <a href="{% url 'tienda:carrito_eliminar' item.producto.id %}" class="btn btn-sm btn-outline-danger ms-2"><i class="bi bi-trash"></i></a>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <div class="text-muted small">Bs {{ item.precio_unitario|floatformat:2|intcomma }} c/u</div>
+                    <div class="fw-bold fs-5 text-success">Bs {{ item.subtotal|floatformat:2|intcomma }}</div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="d-flex justify-content-between mt-3">
+                <a href="{% url 'tienda:catalogo' %}" class="btn btn-link text-decoration-none"><i class="bi bi-arrow-left"></i> Seguir comprando</a>
+                <a href="{% url 'tienda:carrito_vaciar' %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Vaciar el carrito?');"><i class="bi bi-x-lg"></i> Vaciar carrito</a>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="cart-summary">
+                <h5 class="mb-3">Resumen</h5>
+                <div class="d-flex justify-content-between mb-2"><span>Subtotal ({{ carrito.total_items }} items)</span><strong>Bs {{ carrito.total|floatformat:2|intcomma }}</strong></div>
+                <div class="d-flex justify-content-between mb-2 small text-muted"><span>Envio</span><span>Se calcula en el checkout</span></div>
+                <hr>
+                <div class="d-flex justify-content-between mb-3"><span class="fs-5">Total</span><span class="fs-4 fw-bold text-success">Bs {{ carrito.total|floatformat:2|intcomma }}</span></div>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'tienda:checkout' %}" class="btn btn-success btn-lg w-100"><i class="bi bi-bag-check"></i> Finalizar compra</a>
+                {% else %}
+                    <a href="{% url 'tienda:login' %}?next={% url 'tienda:checkout' %}" class="btn btn-success btn-lg w-100"><i class="bi bi-box-arrow-in-right"></i> Iniciar sesion para comprar</a>
+                    <p class="text-center small text-muted mt-2">No tenes cuenta? <a href="{% url 'tienda:registro' %}">Registrate aqui</a></p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
