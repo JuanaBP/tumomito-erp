@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from apps.personal.permissions import requires_module
 from django.contrib import messages
 from django.db.models import Q
 from django.core.paginator import Paginator
@@ -7,7 +7,7 @@ from .models import Proveedor
 from .forms import ProveedorForm
 
 
-@login_required
+@requires_module('proveedores')
 def lista(request):
     q = request.GET.get('q', '').strip()
     qs = Proveedor.objects.all()
@@ -20,7 +20,7 @@ def lista(request):
     return render(request, 'proveedores/lista.html', {'proveedores': page, 'q': q})
 
 
-@login_required
+@requires_module('proveedores')
 def crear(request):
     form = ProveedorForm(request.POST or None)
     if form.is_valid():
@@ -30,7 +30,7 @@ def crear(request):
     return render(request, 'proveedores/form.html', {'form': form, 'titulo': 'Nuevo Proveedor'})
 
 
-@login_required
+@requires_module('proveedores')
 def editar(request, pk):
     obj = get_object_or_404(Proveedor, pk=pk)
     form = ProveedorForm(request.POST or None, instance=obj)
@@ -41,7 +41,7 @@ def editar(request, pk):
     return render(request, 'proveedores/form.html', {'form': form, 'titulo': 'Editar Proveedor'})
 
 
-@login_required
+@requires_module('proveedores')
 def eliminar(request, pk):
     obj = get_object_or_404(Proveedor, pk=pk)
     if request.method == 'POST':
@@ -51,7 +51,7 @@ def eliminar(request, pk):
     return render(request, 'proveedores/confirmar_eliminar.html', {'proveedor': obj})
 
 
-@login_required
+@requires_module('proveedores')
 def detalle(request, pk):
     obj = get_object_or_404(Proveedor, pk=pk)
     compras = obj.notacompra_set.order_by('-fecha')[:10] if hasattr(obj, 'notacompra_set') else []

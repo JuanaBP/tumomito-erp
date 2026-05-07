@@ -28,7 +28,7 @@ def home(request):
     destacados = Producto.objects.filter(activo=True, visible_tienda=True, destacado=True)[:8]
     nuevos = Producto.objects.filter(activo=True, visible_tienda=True).order_by('-creado')[:8]
     categorias = Producto.objects.filter(activo=True, visible_tienda=True) \
-        .values_list('categoria', flat=True).distinct()
+        .values_list('categoria__nombre', flat=True).distinct()
     return render(request, 'tienda/home.html', {
         'destacados': destacados,
         'nuevos': nuevos,
@@ -44,7 +44,7 @@ def catalogo(request):
     orden = request.GET.get('orden', 'nombre')
 
     if cat:
-        qs = qs.filter(categoria=cat)
+        qs = qs.filter(categoria__nombre=cat)
     if q:
         qs = qs.filter(Q(nombre__icontains=q) | Q(descripcion__icontains=q) | Q(fabricante__icontains=q))
 
@@ -60,7 +60,7 @@ def catalogo(request):
     page = Paginator(qs, 12).get_page(request.GET.get('page'))
 
     categorias = Producto.objects.filter(activo=True, visible_tienda=True) \
-        .values_list('categoria', flat=True).distinct()
+        .values_list('categoria__nombre', flat=True).distinct()
 
     cliente = None
     if request.user.is_authenticated:
@@ -81,7 +81,7 @@ def detalle_producto(request, slug):
     producto = get_object_or_404(Producto, slug=slug, activo=True, visible_tienda=True)
     relacionados = Producto.objects.filter(
         categoria=producto.categoria, activo=True, visible_tienda=True
-    ).exclude(id=producto.id)[:4]
+    ).exclude(id=producto.id)[:4] if producto.categoria else []
     cliente = None
     if request.user.is_authenticated:
         cliente = getattr(request.user, 'cliente_perfil', None)

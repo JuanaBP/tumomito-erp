@@ -11,12 +11,68 @@ from django.contrib.auth.models import User
 from django.db import transaction
 
 from apps.core.models import Persona, Estado, Turno
-from apps.personal.models import Empleado, Contrato, Login
+from apps.personal.models import Empleado, Contrato, Login, Rol
 from apps.clientes.models import Cliente
 from apps.proveedores.models import Proveedor
-from apps.inventario.models import Producto, Inventario
+from apps.inventario.models import Producto, Inventario, Categoria
 from apps.compras.models import NotaCompra, DetalleCompra
 from apps.ventas.models import NotaVenta, DetalleVenta
+
+
+# Definicion de roles iniciales del sistema
+ROLES_INICIALES = [
+    {
+        'codigo': 'administrador',
+        'nombre': 'Administrador',
+        'descripcion': 'Acceso total al sistema, gestiona usuarios y configuracion.',
+        'es_admin': True,
+        'modulos': [],  # ignorado porque es_admin=True
+    },
+    {
+        'codigo': 'gerente',
+        'nombre': 'Gerente',
+        'descripcion': 'Acceso a operacion completa excepto gestion de usuarios.',
+        'modulos': ['dashboard', 'pos', 'ventas', 'clientes', 'compras', 'proveedores',
+                    'productos', 'categorias', 'inventario', 'tienda_admin', 'bitacora', 'reportes'],
+    },
+    {
+        'codigo': 'vendedor',
+        'nombre': 'Vendedor',
+        'descripcion': 'Realiza ventas en el POS y gestiona clientes.',
+        'modulos': ['dashboard', 'pos', 'ventas', 'clientes', 'productos', 'tienda_admin'],
+    },
+    {
+        'codigo': 'cajero',
+        'nombre': 'Cajero',
+        'descripcion': 'Cobra ventas en el POS, ve clientes y productos.',
+        'modulos': ['dashboard', 'pos', 'ventas', 'clientes', 'productos'],
+    },
+    {
+        'codigo': 'almacenero',
+        'nombre': 'Almacenero',
+        'descripcion': 'Gestiona productos, categorias e inventario.',
+        'modulos': ['dashboard', 'productos', 'categorias', 'inventario', 'compras'],
+    },
+    {
+        'codigo': 'comprador',
+        'nombre': 'Comprador',
+        'descripcion': 'Gestiona compras y proveedores.',
+        'modulos': ['dashboard', 'compras', 'proveedores', 'productos'],
+    },
+]
+
+CATEGORIAS_INICIALES = [
+    ('Hogar', 'bi-house-door', 'primary'),
+    ('Tecnologia', 'bi-laptop', 'info'),
+    ('Juguetes', 'bi-controller', 'warning'),
+    ('Ropa', 'bi-bag', 'danger'),
+    ('Belleza', 'bi-heart', 'danger'),
+    ('Papeleria', 'bi-pencil', 'secondary'),
+    ('Ferreteria', 'bi-tools', 'dark'),
+    ('Alimentos', 'bi-cup-hot', 'success'),
+    ('Bebidas', 'bi-cup-straw', 'success'),
+    ('Otros', 'bi-three-dots', 'secondary'),
+]
 
 
 class Command(BaseCommand):
@@ -36,28 +92,102 @@ class Command(BaseCommand):
             Turno.objects.get_or_create(tipo=t, jornada=j)
         self.stdout.write('  Estados y turnos: OK')
 
-        # Empleados
+        # ROLES iniciales
+        roles_creados = {}
+        for rol_data in ROLES_INICIALES:
+            rol, _ = Rol.objects.update_or_create(
+                codigo=rol_data['codigo'],
+                defaults={
+                    'nombre': rol_data['nombre'],
+                    'descripcion': rol_data['descripcion'],
+                    'modulos': rol_data['modulos'],
+                    'es_admin': rol_data.get('es_admin', False),
+                    'activo': True,
+                }
+            )
+            roles_creados[rol_data['codigo']] = rol
+        self.stdout.write(f'  Roles: {len(roles_creados)} OK')
+
+        # CATEGORIAS iniciales
+        cat_objs = {}
+        for i, (nombre, icono, color) in enumerate(CATEGORIAS_INICIALES):
+            cat, _ = Categoria.objects.get_or_create(
+                nombre=nombre,
+                defaults={'icono': icono, 'color': color, 'orden': i, 'activo': True},
+            )
+            cat_objs[nombre] = cat
+        self.stdout.write(f'  Categorias: {len(cat_objs)} OK')
+
+        # Empleados con roles y usuarios (uno por cada rol no-admin)
         empleados_data = [
-            ('Juan Carlos Mendoza', '5847123', 'Boliviana', '70123456', 'juan@tumomito.bo'),
-            ('Maria Laura Vega', '6398745', 'Boliviana', '71987654', 'maria@tumomito.bo'),
-            ('Pedro Antonio Roca', '4521098', 'Boliviana', '72345678', 'pedro@tumomito.bo'),
+            # (nombre, ci, celular, email, codigo_rol, username, password)
+            ('Juan Carlos Mendoza', '5847123', '70123456', 'juan@tumomito.bo', 'gerente', 'gerente', 'gerente123'),
+            ('Maria Laura Vega', '6398745', '71987654', 'maria@tumomito.bo', 'vendedor', 'vendedor', 'vendedor123'),
+            ('Pedro Antonio Roca', '4521098', '72345678', 'pedro@tumomito.bo', 'cajero', 'cajero', 'cajero123'),
+            ('Sofia Elena Aliaga', '3987654', '73456789', 'sofia@tumomito.bo', 'almacenero', 'almacenero', 'almacen123'),
+            ('Luis Fernando Vaca', '2876543', '74567890', 'luis@tumomito.bo', 'comprador', 'comprador', 'comprador123'),
         ]
         empleados = []
-        for nombre, ci, nac, cel, email in empleados_data:
+        for nombre, ci, cel, email, cod_rol, uname, pwd in empleados_data:
             persona, _ = Persona.objects.get_or_create(
                 ci=ci,
                 defaults={
                     'nombre': nombre, 'fecha_nacimiento': date(1990, 5, 15),
-                    'nacionalidad': nac, 'celular': cel, 'email': email,
+                    'nacionalidad': 'Boliviana', 'celular': cel, 'email': email,
                     'direccion': 'Av. Cristo Redentor #123',
                 }
             )
+            # User para acceder al sistema
+            u, created = User.objects.get_or_create(
+                username=uname,
+                defaults={'email': email, 'first_name': nombre.split()[0], 'is_staff': True}
+            )
+            if created:
+                u.set_password(pwd)
+                u.save()
             emp, _ = Empleado.objects.get_or_create(
                 persona=persona,
-                defaults={'telf_contacto': '76543210', 'nombre_contacto': 'Familiar', 'estado_civil': 'Soltero'}
+                defaults={
+                    'telf_contacto': '76543210', 'nombre_contacto': 'Familiar',
+                    'estado_civil': 'Soltero',
+                    'rol': roles_creados.get(cod_rol),
+                    'user': u, 'fecha_ingreso': date(2024, 1, 1),
+                    'activo': True,
+                }
             )
+            # Si ya existia pero sin rol, actualizar
+            if not emp.rol:
+                emp.rol = roles_creados.get(cod_rol)
+                emp.user = u
+                emp.activo = True
+                emp.save()
             empleados.append(emp)
-        self.stdout.write(f'  Empleados: {len(empleados)} OK')
+
+        # Tambien vincular el superuser admin al rol Administrador
+        admin_user = User.objects.filter(is_superuser=True).first()
+        if admin_user and not hasattr(admin_user, 'empleado_perfil'):
+            try:
+                p_admin, _ = Persona.objects.get_or_create(
+                    ci='ADMIN-0001',
+                    defaults={
+                        'nombre': 'Administrador del Sistema', 'fecha_nacimiento': date(1985, 1, 1),
+                        'nacionalidad': 'Boliviana', 'celular': '70000000',
+                        'email': admin_user.email or 'admin@tumomito.bo',
+                    }
+                )
+                Empleado.objects.get_or_create(
+                    persona=p_admin,
+                    defaults={
+                        'telf_contacto': '70000000', 'nombre_contacto': 'N/A',
+                        'estado_civil': 'Soltero',
+                        'rol': roles_creados.get('administrador'),
+                        'user': admin_user, 'activo': True,
+                    }
+                )
+            except Exception as e:
+                self.stdout.write(f'  (admin link skipped: {e})')
+
+        self.stdout.write(f'  Empleados con usuarios: {len(empleados)} OK')
 
         # Contratos
         turno = Turno.objects.first()
@@ -144,7 +274,7 @@ class Command(BaseCommand):
             p, created = Producto.objects.get_or_create(
                 codigo=codigo,
                 defaults={
-                    'nombre': nombre, 'categoria': cat, 'subcategoria': subcat,
+                    'nombre': nombre, 'categoria': cat_objs.get(cat), 'subcategoria': subcat,
                     'fabricante': fab, 'precio_venta': Decimal(str(precio)),
                     'precio_mayorista': Decimal(str(round(precio * 0.80, 2))),  # 20% off mayoristas
                     'cant_min_mayorista': 12,

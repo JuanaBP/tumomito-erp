@@ -1,4 +1,5 @@
 {% load static %}
+{% load permisos %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -28,40 +29,68 @@
         </div>
 
         <nav class="erp-nav">
+            {% if user|tiene_acceso:'dashboard' %}
             <a href="{% url 'dashboard:home' %}" class="nav-item {% if request.resolver_match.namespace == 'dashboard' %}active{% endif %}">
                 <i class="bi bi-grid-1x2-fill"></i><span>Dashboard</span>
             </a>
+            {% endif %}
 
+            {% if user|tiene_acceso:'pos' or user|tiene_acceso:'ventas' or user|tiene_acceso:'clientes' %}
             <div class="nav-section">VENTAS</div>
+            {% if user|tiene_acceso:'pos' %}
             <a href="{% url 'ventas:pos' %}" class="nav-item">
                 <i class="bi bi-cart3"></i><span>Punto de Venta</span>
             </a>
+            {% endif %}
+            {% if user|tiene_acceso:'ventas' %}
             <a href="{% url 'ventas:lista' %}" class="nav-item {% if request.resolver_match.namespace == 'ventas' and 'pos' not in request.path %}active{% endif %}">
                 <i class="bi bi-receipt"></i><span>Notas de Venta</span>
             </a>
+            {% endif %}
+            {% if user|tiene_acceso:'clientes' %}
             <a href="{% url 'clientes:lista' %}" class="nav-item {% if request.resolver_match.namespace == 'clientes' %}active{% endif %}">
                 <i class="bi bi-people"></i><span>Clientes</span>
             </a>
+            {% endif %}
+            {% endif %}
 
+            {% if user|tiene_acceso:'compras' or user|tiene_acceso:'proveedores' %}
             <div class="nav-section">COMPRAS</div>
+            {% if user|tiene_acceso:'compras' %}
             <a href="{% url 'compras:nueva' %}" class="nav-item">
                 <i class="bi bi-bag-plus"></i><span>Nueva Compra</span>
             </a>
             <a href="{% url 'compras:lista' %}" class="nav-item {% if request.resolver_match.namespace == 'compras' and 'nueva' not in request.path %}active{% endif %}">
                 <i class="bi bi-file-earmark-text"></i><span>Notas de Compra</span>
             </a>
+            {% endif %}
+            {% if user|tiene_acceso:'proveedores' %}
             <a href="{% url 'proveedores:lista' %}" class="nav-item {% if request.resolver_match.namespace == 'proveedores' %}active{% endif %}">
                 <i class="bi bi-truck"></i><span>Proveedores</span>
             </a>
+            {% endif %}
+            {% endif %}
 
+            {% if user|tiene_acceso:'productos' or user|tiene_acceso:'categorias' or user|tiene_acceso:'inventario' %}
             <div class="nav-section">INVENTARIO</div>
+            {% if user|tiene_acceso:'productos' %}
             <a href="{% url 'inventario:productos' %}" class="nav-item {% if 'productos' in request.path %}active{% endif %}">
                 <i class="bi bi-box-seam"></i><span>Productos</span>
             </a>
+            {% endif %}
+            {% if user|tiene_acceso:'categorias' %}
+            <a href="{% url 'inventario:categorias' %}" class="nav-item {% if 'categorias' in request.path %}active{% endif %}">
+                <i class="bi bi-tags"></i><span>Categorias</span>
+            </a>
+            {% endif %}
+            {% if user|tiene_acceso:'inventario' %}
             <a href="{% url 'inventario:lotes' %}" class="nav-item {% if 'lotes' in request.path %}active{% endif %}">
                 <i class="bi bi-boxes"></i><span>Stock por Lotes</span>
             </a>
+            {% endif %}
+            {% endif %}
 
+            {% if user|tiene_acceso:'tienda_admin' %}
             <div class="nav-section">TIENDA ONLINE</div>
             <a href="{% url 'tienda:admin_pedidos' %}" class="nav-item {% if 'admin/pedidos' in request.path %}active{% endif %}">
                 <i class="bi bi-globe"></i><span>Pedidos Online</span>
@@ -69,22 +98,36 @@
             <a href="/tienda/" target="_blank" class="nav-item">
                 <i class="bi bi-box-arrow-up-right"></i><span>Ver tienda publica</span>
             </a>
+            {% endif %}
 
+            {% if user|tiene_acceso:'empleados' or user|tiene_acceso:'roles' or user|tiene_acceso:'bitacora' %}
             <div class="nav-section">RECURSOS HUMANOS</div>
+            {% if user|tiene_acceso:'empleados' %}
             <a href="{% url 'personal:empleados' %}" class="nav-item {% if 'empleados' in request.path %}active{% endif %}">
                 <i class="bi bi-person-badge"></i><span>Empleados</span>
             </a>
             <a href="{% url 'personal:contratos' %}" class="nav-item {% if 'contratos' in request.path %}active{% endif %}">
                 <i class="bi bi-file-earmark-medical"></i><span>Contratos</span>
             </a>
+            {% endif %}
+            {% if user|tiene_acceso:'roles' %}
+            <a href="{% url 'personal:roles' %}" class="nav-item {% if 'roles' in request.path %}active{% endif %}">
+                <i class="bi bi-shield-lock"></i><span>Roles y Permisos</span>
+            </a>
+            {% endif %}
+            {% if user|tiene_acceso:'bitacora' %}
             <a href="{% url 'personal:bitacora' %}" class="nav-item {% if 'bitacora' in request.path %}active{% endif %}">
                 <i class="bi bi-clock-history"></i><span>Bitacora</span>
             </a>
+            {% endif %}
+            {% endif %}
 
+            {% if user.is_superuser %}
             <div class="nav-section">SISTEMA</div>
             <a href="/admin/" class="nav-item" target="_blank">
                 <i class="bi bi-gear"></i><span>Administracion</span>
             </a>
+            {% endif %}
         </nav>
     </aside>
 
@@ -104,7 +147,14 @@
                 <div class="dropdown">
                     <button class="btn btn-sm dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown">
                         <div class="avatar me-2">{{ user.username|first|upper }}</div>
-                        <span class="d-none d-sm-inline">{{ user.username }}</span>
+                        <div class="d-none d-sm-block text-start">
+                            <div style="line-height:1;">{{ user.username }}</div>
+                            {% if empleado_actual.rol %}
+                                <small class="text-muted" style="font-size:0.7rem;">{{ empleado_actual.rol.nombre }}</small>
+                            {% elif user.is_superuser %}
+                                <small class="text-danger" style="font-size:0.7rem;">Superuser</small>
+                            {% endif %}
+                        </div>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><a class="dropdown-item" href="/admin/"><i class="bi bi-gear"></i> Admin</a></li>

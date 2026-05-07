@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from apps.personal.permissions import requires_module
 from django.contrib import messages
 from django.db.models import Q, Sum
 from django.core.paginator import Paginator
@@ -15,7 +15,7 @@ from apps.inventario.models import Producto, Inventario
 from apps.personal.models import Empleado, Login
 
 
-@login_required
+@requires_module('compras')
 def lista(request):
     q = request.GET.get('q', '').strip()
     qs = NotaCompra.objects.select_related('proveedor', 'empleado__persona')
@@ -29,7 +29,7 @@ def lista(request):
     return render(request, 'compras/lista.html', {'compras': page, 'q': q, 'total': total})
 
 
-@login_required
+@requires_module('compras')
 def detalle(request, pk):
     compra = get_object_or_404(
         NotaCompra.objects.select_related('proveedor', 'empleado__persona'),
@@ -39,7 +39,7 @@ def detalle(request, pk):
     return render(request, 'compras/detalle.html', {'compra': compra, 'detalles': detalles})
 
 
-@login_required
+@requires_module('compras')
 def nueva(request):
     """Vista para crear una nueva orden de compra (formulario interactivo)."""
     proveedores = Proveedor.objects.filter(activo=True)
@@ -50,7 +50,7 @@ def nueva(request):
     })
 
 
-@login_required
+@requires_module('compras')
 @transaction.atomic
 def confirmar(request):
     if request.method != 'POST':

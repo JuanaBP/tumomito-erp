@@ -2,19 +2,17 @@ from django.utils.deprecation import MiddlewareMixin
 
 
 class BitacoraMiddleware(MiddlewareMixin):
-    """Middleware simple que registra accesos a la app por usuarios autenticados."""
+    """Registra acciones POST/PUT/DELETE de usuarios autenticados."""
 
     def process_response(self, request, response):
         try:
             if request.user.is_authenticated and request.method in ('POST', 'PUT', 'DELETE'):
-                from apps.personal.models import Login, Bitacora
-                login = Login.objects.filter(user=request.user).first()
-                if login:
-                    Bitacora.objects.create(
-                        login=login,
-                        accion=f"{request.method} {request.path}",
-                        ip=self._get_ip(request),
-                    )
+                from apps.personal.models import Bitacora
+                Bitacora.objects.create(
+                    user=request.user,
+                    accion=f"{request.method} {request.path}",
+                    ip=self._get_ip(request),
+                )
         except Exception:
             pass
         return response

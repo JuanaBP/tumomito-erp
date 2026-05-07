@@ -120,7 +120,7 @@ source venv/bin/activate
 **Windows:**
 ```bash
 python -m venv venv
-venv\Scripts\activate
+source venv/Scripts/activate
 ```
 
 ### 3. Instalar dependencias

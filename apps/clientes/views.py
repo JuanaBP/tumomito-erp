@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from apps.personal.permissions import requires_module
 from django.contrib import messages
 from django.db.models import Q
 from django.core.paginator import Paginator
@@ -7,7 +7,7 @@ from .models import Cliente
 from .forms import ClienteForm
 
 
-@login_required
+@requires_module('clientes')
 def lista(request):
     q = request.GET.get('q', '').strip()
     qs = Cliente.objects.select_related('persona').all()
@@ -23,7 +23,7 @@ def lista(request):
     return render(request, 'clientes/lista.html', {'clientes': page, 'q': q})
 
 
-@login_required
+@requires_module('clientes')
 def crear(request):
     if request.method == 'POST':
         form = ClienteForm(request.POST)
@@ -36,7 +36,7 @@ def crear(request):
     return render(request, 'clientes/form.html', {'form': form, 'titulo': 'Nuevo Cliente'})
 
 
-@login_required
+@requires_module('clientes')
 def editar(request, pk):
     cliente = get_object_or_404(Cliente, pk=pk)
     if request.method == 'POST':
@@ -50,7 +50,7 @@ def editar(request, pk):
     return render(request, 'clientes/form.html', {'form': form, 'titulo': 'Editar Cliente'})
 
 
-@login_required
+@requires_module('clientes')
 def eliminar(request, pk):
     cliente = get_object_or_404(Cliente, pk=pk)
     if request.method == 'POST':
@@ -60,7 +60,7 @@ def eliminar(request, pk):
     return render(request, 'clientes/confirmar_eliminar.html', {'cliente': cliente})
 
 
-@login_required
+@requires_module('clientes')
 def detalle(request, pk):
     cliente = get_object_or_404(Cliente.objects.select_related('persona'), pk=pk)
     ventas = cliente.notaventa_set.order_by('-fecha')[:10] if hasattr(cliente, 'notaventa_set') else []

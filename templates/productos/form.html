@@ -3,30 +3,112 @@
 {% block page_title %}{{ titulo }}{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header"><i class="bi bi-box-seam"></i> {{ titulo }}</div>
-    <div class="card-body">
-        <form method="post" enctype="multipart/form-data" novalidate>
-            {% csrf_token %}
+<form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    <!-- ===== Datos basicos ===== -->
+    <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-box-seam"></i> Datos del Producto</div>
+        <div class="card-body">
             <div class="row g-3">
-                <div class="col-md-3"><label class="form-label">Codigo SKU *</label>{{ form.codigo }}</div>
-                <div class="col-md-9"><label class="form-label">Nombre *</label>{{ form.nombre }}</div>
-                <div class="col-md-4"><label class="form-label">Categoria *</label>{{ form.categoria }}</div>
-                <div class="col-md-4"><label class="form-label">Subcategoria</label>{{ form.subcategoria }}</div>
-                <div class="col-md-4"><label class="form-label">Fabricante *</label>{{ form.fabricante }}</div>
-                <div class="col-md-4"><label class="form-label">Precio de venta (Bs) *</label>{{ form.precio_venta }}</div>
-                <div class="col-md-4"><label class="form-label">Imagen</label>{{ form.imagen }}</div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <div class="form-check"><label class="form-check-label">{{ form.activo }} Producto activo</label></div>
+                <div class="col-md-3">
+                    <label class="form-label">Codigo SKU *</label>
+                    {{ form.codigo }}
+                    {% if form.codigo.errors %}<div class="text-danger small">{{ form.codigo.errors }}</div>{% endif %}
                 </div>
-                <div class="col-12"><label class="form-label">Descripcion</label>{{ form.descripcion }}</div>
+                <div class="col-md-9">
+                    <label class="form-label">Nombre *</label>
+                    {{ form.nombre }}
+                    {% if form.nombre.errors %}<div class="text-danger small">{{ form.nombre.errors }}</div>{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Categoria *</label>
+                    {{ form.categoria }}
+                    {% if form.categoria.errors %}<div class="text-danger small">{{ form.categoria.errors }}</div>{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Subcategoria</label>
+                    {{ form.subcategoria }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Fabricante *</label>
+                    {{ form.fabricante }}
+                    {% if form.fabricante.errors %}<div class="text-danger small">{{ form.fabricante.errors }}</div>{% endif %}
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Descripcion</label>
+                    {{ form.descripcion }}
+                </div>
             </div>
-            {% if form.errors %}<div class="alert alert-danger mt-3">{{ form.errors }}</div>{% endif %}
-            <div class="mt-4 d-flex gap-2">
-                <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> Guardar</button>
-                <a href="{% url 'inventario:productos' %}" class="btn btn-outline-secondary">Cancelar</a>
-            </div>
-        </form>
+        </div>
     </div>
-</div>
+
+    <!-- ===== Precios ===== -->
+    <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-cash-stack"></i> Precios</div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Precio de venta minorista (Bs) *</label>
+                    {{ form.precio_venta }}
+                    <small class="text-muted">Precio publico al cliente final</small>
+                    {% if form.precio_venta.errors %}<div class="text-danger small">{{ form.precio_venta.errors }}</div>{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Precio mayorista (Bs)</label>
+                    {{ form.precio_mayorista }}
+                    <small class="text-muted">{{ form.precio_mayorista.help_text }}</small>
+                    {% if form.precio_mayorista.errors %}<div class="text-danger small">{{ form.precio_mayorista.errors }}</div>{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Cantidad minima para precio mayorista</label>
+                    {{ form.cant_min_mayorista }}
+                    <small class="text-muted">{{ form.cant_min_mayorista.help_text }}</small>
+                    {% if form.cant_min_mayorista.errors %}<div class="text-danger small">{{ form.cant_min_mayorista.errors }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Imagen y visibilidad ===== -->
+    <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-image"></i> Imagen y visibilidad</div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Imagen</label>
+                    {{ form.imagen }}
+                    <small class="text-muted">Opcional. Aparece en la tienda online.</small>
+                </div>
+                <div class="col-md-6 d-flex flex-column gap-2 justify-content-center">
+                    <div class="form-check">
+                        {{ form.activo }}
+                        <label class="form-check-label" for="{{ form.activo.id_for_label }}">
+                            <strong>Producto activo</strong> (se puede vender desde el POS)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        {{ form.visible_tienda }}
+                        <label class="form-check-label" for="{{ form.visible_tienda.id_for_label }}">
+                            Visible en tienda online
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        {{ form.destacado }}
+                        <label class="form-check-label" for="{{ form.destacado.id_for_label }}">
+                            Destacado en la home de la tienda
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> Guardar producto</button>
+        <a href="{% url 'inventario:productos' %}" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+</form>
 {% endblock %}

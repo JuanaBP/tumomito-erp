@@ -1,5 +1,5 @@
 from datetime import date, timedelta
-from django.contrib.auth.decorators import login_required
+from apps.personal.permissions import requires_module
 from django.shortcuts import render
 from django.db.models import Sum, Count, F, DecimalField
 from django.db.models.functions import TruncMonth, TruncDay
@@ -11,7 +11,7 @@ from apps.clientes.models import Cliente
 from apps.proveedores.models import Proveedor
 
 
-@login_required
+@requires_module('dashboard')
 def home(request):
     hoy = date.today()
     inicio_mes = hoy.replace(day=1)

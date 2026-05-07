@@ -3,23 +3,46 @@ from django.db.models import Sum
 from django.utils.text import slugify
 
 
+class Categoria(models.Model):
+    """Categoria de productos. Reemplaza el CharField hardcoded."""
+    nombre = models.CharField(max_length=60, unique=True)
+    slug = models.SlugField(max_length=80, unique=True, blank=True)
+    descripcion = models.TextField(blank=True)
+    icono = models.CharField(max_length=50, blank=True,
+                             help_text='Clase de icono Bootstrap (ej: bi-laptop)',
+                             default='bi-tag')
+    color = models.CharField(max_length=20, blank=True, default='primary',
+                             help_text='Color Bootstrap: primary, success, warning, danger, info')
+    activo = models.BooleanField(default=True)
+    orden = models.PositiveIntegerField(default=0,
+                                         help_text='Orden de aparicion (menor primero)')
+    creado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Categoria"
+        verbose_name_plural = "Categorias"
+        db_table = "categoria"
+        ordering = ['orden', 'nombre']
+
+    def __str__(self):
+        return self.nombre
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.nombre)[:75]
+        super().save(*args, **kwargs)
+
+    @property
+    def total_productos(self):
+        return self.productos.filter(activo=True).count()
+
+
 class Producto(models.Model):
-    CATEGORIA_CHOICES = [
-        ('Hogar', 'Hogar'),
-        ('Tecnologia', 'Tecnologia'),
-        ('Juguetes', 'Juguetes'),
-        ('Ropa', 'Ropa'),
-        ('Belleza', 'Belleza'),
-        ('Papeleria', 'Papeleria'),
-        ('Ferreteria', 'Ferreteria'),
-        ('Alimentos', 'Alimentos'),
-        ('Bebidas', 'Bebidas'),
-        ('Otros', 'Otros'),
-    ]
     codigo = models.CharField(max_length=30, unique=True, verbose_name="Codigo SKU")
     slug = models.SlugField(max_length=120, unique=True, blank=True)
     nombre = models.CharField(max_length=100)
-    categoria = models.CharField(max_length=50, choices=CATEGORIA_CHOICES)
+    categoria = models.ForeignKey(Categoria, on_delete=models.PROTECT,
+                                  related_name='productos', null=True, blank=True)
     subcategoria = models.CharField(max_length=50, blank=True, null=True)
     fabricante = models.CharField(max_length=50)
     descripcion = models.TextField(blank=True, null=True)
@@ -51,6 +74,10 @@ class Producto(models.Model):
         super().save(*args, **kwargs)
 
     @property
+    def categoria_nombre(self):
+        return self.categoria.nombre if self.categoria else 'Sin categoria'
+
+    @property
     def stock_total(self):
         result = self.lotes.aggregate(total=Sum('cantidad_disponible'))
         return result['total'] or 0
@@ -60,7 +87,6 @@ class Producto(models.Model):
         return self.stock_total < 10
 
     def precio_para_cliente(self, cliente, cantidad=1):
-        """Devuelve el precio aplicable segun tipo de cliente y cantidad."""
         if (cliente and cliente.es_mayorista
                 and self.precio_mayorista > 0
                 and cantidad >= self.cant_min_mayorista):

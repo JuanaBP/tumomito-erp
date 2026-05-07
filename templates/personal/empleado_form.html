@@ -3,35 +3,114 @@
 {% block page_title %}{{ titulo }}{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header"><i class="bi bi-person-badge"></i> {{ titulo }}</div>
-    <div class="card-body">
-        <form method="post" novalidate>
-            {% csrf_token %}
-            <h6 class="text-muted text-uppercase small mb-3">Datos personales</h6>
-            <div class="row g-3">
-                <div class="col-md-6"><label class="form-label">Nombre completo *</label>{{ form.nombre }}</div>
-                <div class="col-md-3"><label class="form-label">CI *</label>{{ form.ci }}</div>
-                <div class="col-md-3"><label class="form-label">Fecha nacimiento *</label>{{ form.fecha_nacimiento }}</div>
-                <div class="col-md-4"><label class="form-label">Nacionalidad *</label>{{ form.nacionalidad }}</div>
-                <div class="col-md-4"><label class="form-label">Celular *</label>{{ form.celular }}</div>
-                <div class="col-md-4"><label class="form-label">Email</label>{{ form.email }}</div>
-                <div class="col-12"><label class="form-label">Direccion</label>{{ form.direccion }}</div>
+<form method="post">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+    <div class="row g-3">
+        <!-- Datos personales -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header"><i class="bi bi-person"></i> Datos personales</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label">Nombre completo *</label>
+                            {{ form.nombre }}
+                            {% if form.nombre.errors %}<div class="text-danger small">{{ form.nombre.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">CI *</label>
+                            {{ form.ci }}
+                            {% if form.ci.errors %}<div class="text-danger small">{{ form.ci.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Fecha de nacimiento *</label>
+                            {{ form.fecha_nacimiento }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Nacionalidad</label>
+                            {{ form.nacionalidad }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Celular *</label>
+                            {{ form.celular }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            {{ form.email }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Direccion</label>
+                            {{ form.direccion }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Datos laborales y acceso -->
+        <div class="col-lg-6">
+            <div class="card mb-3">
+                <div class="card-header"><i class="bi bi-briefcase"></i> Datos laborales</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Rol asignado *</label>
+                            {{ form.rol }}
+                            <small class="text-muted">Define a que modulos puede acceder</small>
+                            {% if form.rol.errors %}<div class="text-danger small">{{ form.rol.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Estado civil</label>
+                            {{ form.estado_civil }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Fecha de ingreso</label>
+                            {{ form.fecha_ingreso }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Telefono de emergencia</label>
+                            {{ form.telf_contacto }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Nombre del contacto de emergencia</label>
+                            {{ form.nombre_contacto }}
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                {{ form.activo }}
+                                <label class="form-check-label">Empleado activo (puede acceder al sistema)</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <h6 class="text-muted text-uppercase small mb-3 mt-4">Datos laborales</h6>
-            <div class="row g-3">
-                <div class="col-md-4"><label class="form-label">Estado civil *</label>{{ form.estado_civil }}</div>
-                <div class="col-md-4"><label class="form-label">Contacto emergencia *</label>{{ form.nombre_contacto }}</div>
-                <div class="col-md-4"><label class="form-label">Telefono emergencia *</label>{{ form.telf_contacto }}</div>
+            <div class="card border-warning">
+                <div class="card-header bg-warning bg-opacity-10"><i class="bi bi-key"></i> Acceso al sistema</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nombre de usuario *</label>
+                            {{ form.username }}
+                            {% if empleado %}<small class="text-muted">No se puede modificar</small>{% endif %}
+                            {% if form.username.errors %}<div class="text-danger small">{{ form.username.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Contrasena {% if not empleado %}*{% endif %}</label>
+                            {{ form.password }}
+                            <small class="text-muted">{{ form.password.help_text }}</small>
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            {% if form.errors %}<div class="alert alert-danger mt-3">{{ form.errors }}</div>{% endif %}
-            <div class="mt-4 d-flex gap-2">
-                <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> Guardar</button>
-                <a href="{% url 'personal:empleados' %}" class="btn btn-outline-secondary">Cancelar</a>
-            </div>
-        </form>
+        </div>
     </div>
-</div>
+
+    <div class="d-flex gap-2 mt-3">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> Guardar empleado</button>
+        <a href="{% url 'personal:empleados' %}" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+</form>
 {% endblock %}

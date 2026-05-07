@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from apps.personal.permissions import requires_module
 from django.contrib import messages
 from django.db.models import Q, F, Sum
 from django.core.paginator import Paginator
@@ -15,7 +15,7 @@ from apps.inventario.models import Inventario, Producto
 from apps.personal.models import Empleado
 
 
-@login_required
+@requires_module('ventas')
 def lista(request):
     q = request.GET.get('q', '').strip()
     qs = NotaVenta.objects.select_related('cliente__persona', 'empleado__persona')
@@ -32,7 +32,7 @@ def lista(request):
     })
 
 
-@login_required
+@requires_module('ventas')
 def detalle(request, pk):
     venta = get_object_or_404(
         NotaVenta.objects.select_related('cliente__persona', 'empleado__persona'),
@@ -42,7 +42,7 @@ def detalle(request, pk):
     return render(request, 'ventas/detalle.html', {'venta': venta, 'detalles': detalles})
 
 
-@login_required
+@requires_module('pos')
 def pos(request):
     """Punto de venta. La interfaz es JS, esta vista renderea el shell."""
     clientes = Cliente.objects.select_related('persona').all()
@@ -56,7 +56,7 @@ def pos(request):
     })
 
 
-@login_required
+@requires_module('pos')
 def api_productos_disponibles(request):
     """API JSON para el POS: productos con stock."""
     q = request.GET.get('q', '').strip()
@@ -74,7 +74,7 @@ def api_productos_disponibles(request):
                 'id': p.id,
                 'codigo': p.codigo,
                 'nombre': p.nombre,
-                'categoria': p.categoria,
+                'categoria': p.categoria.nombre if p.categoria else '',
                 'precio': float(p.precio_venta),
                 'stock': stock,
                 'lote_id': lote.id if lote else None,
@@ -83,7 +83,7 @@ def api_productos_disponibles(request):
     return JsonResponse({'productos': data})
 
 
-@login_required
+@requires_module('pos')
 @transaction.atomic
 def pos_confirmar(request):
     """Procesa una venta desde el POS."""
@@ -101,15 +101,17 @@ def pos_confirmar(request):
             return JsonResponse({'ok': False, 'error': 'Carrito vacio'}, status=400)
 
         cliente = Cliente.objects.get(pk=cliente_id)
-        # Empleado vinculado al user, sino el primero
-        empleado = None
-        try:
-            from apps.personal.models import Login
-            login_obj = Login.objects.filter(user=request.user).first()
-            if login_obj:
-                empleado = login_obj.empleado
-        except Exception:
-            pass
+        # Empleado vinculado al user (relacion directa)
+        empleado = getattr(request.user, 'empleado_perfil', None)
+        if not empleado:
+            # Fallback: buscar via Login (compatibilidad)
+            try:
+                from apps.personal.models import Login
+                login_obj = Login.objects.filter(user=request.user).first()
+                if login_obj:
+                    empleado = login_obj.empleado
+            except Exception:
+                pass
         if not empleado:
             empleado = Empleado.objects.first()
         if not empleado:

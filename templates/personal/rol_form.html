@@ -1,0 +1,81 @@
+{% extends 'layouts/base.html' %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<form method="post">
+    {% csrf_token %}
+    <div class="row g-3">
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header"><i class="bi bi-shield"></i> Datos del rol</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre *</label>
+                        {{ form.nombre }}
+                        {% if form.nombre.errors %}<div class="text-danger small">{{ form.nombre.errors }}</div>{% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Codigo *</label>
+                        {{ form.codigo }}
+                        <small class="text-muted">Identificador unico (ej: vendedor, cajero)</small>
+                        {% if form.codigo.errors %}<div class="text-danger small">{{ form.codigo.errors }}</div>{% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripcion</label>
+                        {{ form.descripcion }}
+                    </div>
+                    <div class="mb-2 form-check">
+                        {{ form.es_admin }}
+                        <label class="form-check-label">
+                            <strong>Acceso total</strong> (ignora modulos y da acceso a todo)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        {{ form.activo }}
+                        <label class="form-check-label">Rol activo</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between">
+                    <span><i class="bi bi-grid-3x3-gap"></i> Modulos accesibles</span>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="seleccionarTodos(true)">Marcar todos</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="seleccionarTodos(false)">Desmarcar</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">Marca los modulos a los que este rol tendra acceso.</p>
+                    <div class="row g-2">
+                        {% for cb in form.modulos_seleccionados %}
+                        <div class="col-md-6">
+                            <div class="form-check border rounded p-2">
+                                {{ cb.tag }}
+                                <label class="form-check-label ms-1" for="{{ cb.id_for_label }}">
+                                    {{ cb.choice_label }}
+                                </label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-3">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> Guardar rol</button>
+        <a href="{% url 'personal:roles' %}" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+</form>
+
+<script>
+function seleccionarTodos(estado) {
+    document.querySelectorAll('input[name="modulos_seleccionados"]').forEach(cb => cb.checked = estado);
+}
+</script>
+{% endblock %}

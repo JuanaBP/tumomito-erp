@@ -2,49 +2,284 @@
 {% block title %}Punto de Venta{% endblock %}
 {% block page_title %}Punto de Venta{% endblock %}
 
+{% block extra_head %}
+<style>
+/* ============================================================
+   POS REDISEÑADO - Layout auto-contenido, sin tocar erp.css
+   ============================================================ */
+
+/* Aseguramos que el main del ERP no scrollee la pagina entera
+   cuando estamos en el POS (la pagina tiene su propio layout interno) */
+body:has(.pos-v2) {
+    overflow: hidden;
+}
+
+.pos-v2 {
+    /* Ocupa toda la altura disponible debajo del topbar y titulo */
+    height: calc(100vh - 175px);
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 16px;
+    min-height: 0;
+}
+
+@media (max-width: 991px) {
+    body:has(.pos-v2) { overflow: auto; }
+    .pos-v2 {
+        grid-template-columns: 1fr;
+        height: auto;
+        min-height: calc(100vh - 175px);
+    }
+}
+
+/* ===== Columna izquierda: productos ===== */
+.pos-v2-products {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.pos-v2-search {
+    flex-shrink: 0;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 10px;
+    margin-bottom: 12px;
+}
+
+.pos-v2-grid {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+    gap: 12px;
+    padding: 4px 6px 4px 0;
+    align-content: start;
+}
+
+.pos-v2-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    user-select: none;
+}
+.pos-v2-card:hover {
+    border-color: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+}
+.pos-v2-card.no-stock { opacity: 0.4; cursor: not-allowed; }
+.pos-v2-card .codigo {
+    font-size: 0.7rem; color: #6b7280;
+    font-family: 'Courier New', monospace;
+}
+.pos-v2-card .nombre {
+    font-weight: 600; font-size: 0.85rem;
+    margin: 6px 0; min-height: 36px;
+    line-height: 1.2;
+}
+.pos-v2-card .precio { color: #10b981; font-weight: 700; font-size: 1.05rem; }
+.pos-v2-card .stock { font-size: 0.7rem; color: #6b7280; margin-top: 2px; }
+
+/* ===== Columna derecha: 2 cards apiladas ===== */
+.pos-v2-side {
+    display: grid;
+    grid-template-rows: 1fr auto;
+    gap: 12px;
+    min-height: 0;
+}
+
+/* Card 1: carrito (cliente + items con scroll) */
+.pos-v2-cart {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+.pos-v2-cart-header {
+    flex-shrink: 0;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    font-weight: 600;
+    background: #f9fafb;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.pos-v2-cart-header i { color: #2563eb; }
+
+.pos-v2-cart-client {
+    flex-shrink: 0;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.pos-v2-cart-items {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 4px 16px;
+}
+
+.pos-v2-cart-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+.pos-v2-cart-item:last-child { border-bottom: none; }
+.pos-v2-cart-item .info { flex: 1; min-width: 0; }
+.pos-v2-cart-item .info .nom {
+    font-weight: 600;
+    font-size: 0.85rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.pos-v2-cart-item .info .pre {
+    font-size: 0.72rem;
+    color: #6b7280;
+}
+.pos-v2-cart-item .ctrl {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+.pos-v2-cart-item .ctrl button {
+    width: 26px; height: 26px;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    background: white;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.pos-v2-cart-item .ctrl button:hover { background: #f3f4f6; }
+.pos-v2-cart-item .ctrl .qty {
+    min-width: 26px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+.pos-v2-cart-item .ctrl .del {
+    color: #dc2626;
+    border-color: #fecaca;
+    margin-left: 4px;
+}
+.pos-v2-cart-item .ctrl .del:hover { background: #fef2f2; }
+
+.pos-v2-empty {
+    text-align: center;
+    color: #9ca3af;
+    padding: 40px 20px;
+    font-size: 0.85rem;
+}
+
+/* Card 2: resumen + botones (siempre visible al fondo) */
+.pos-v2-summary {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 14px 16px;
+    flex-shrink: 0;
+}
+.pos-v2-summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+.pos-v2-summary-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 12px 0 14px;
+    margin-top: 6px;
+    border-top: 2px solid #e5e7eb;
+}
+.pos-v2-summary-total .label {
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+.pos-v2-summary-total .amount {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #10b981;
+}
+.pos-v2-summary button { width: 100%; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="pos-grid">
-    <!-- Catalogo -->
-    <div>
-        <div class="card mb-3">
-            <div class="card-body py-2">
-                <input type="search" id="posSearch" class="form-control" placeholder="Buscar producto por nombre o codigo... (Enter para agregar primero)">
-            </div>
+<form id="csrfForm" style="display:none;">{% csrf_token %}</form>
+
+<div class="pos-v2">
+    <!-- ===== Columna izquierda: productos ===== -->
+    <div class="pos-v2-products">
+        <div class="pos-v2-search">
+            <input type="search" id="posSearch" class="form-control"
+                   placeholder="Buscar producto por nombre o codigo..."
+                   autocomplete="off">
         </div>
-        <div id="posProducts" class="pos-products"></div>
+        <div id="posProducts" class="pos-v2-grid"></div>
     </div>
 
-    <!-- Carrito -->
-    <div class="pos-cart">
-        <div class="card-header"><i class="bi bi-cart3"></i> Carrito</div>
-
-        <div class="px-3 pt-3">
-            <label class="form-label small text-muted mb-1">Cliente</label>
-            <select id="posCliente" class="form-select form-select-sm">
-                <option value="">-- Selecciona cliente --</option>
-                {% for c in clientes %}
-                <option value="{{ c.pk }}">{{ c.persona.nombre }} ({{ c.nit }})</option>
-                {% endfor %}
-            </select>
+    <!-- ===== Columna derecha: carrito + resumen ===== -->
+    <div class="pos-v2-side">
+        <!-- Card del carrito -->
+        <div class="pos-v2-cart">
+            <div class="pos-v2-cart-header">
+                <i class="bi bi-cart3"></i> Carrito
+            </div>
+            <div class="pos-v2-cart-client">
+                <label class="form-label small text-muted mb-1">Cliente</label>
+                <select id="posCliente" class="form-select form-select-sm">
+                    <option value="">-- Selecciona cliente --</option>
+                    {% for c in clientes %}
+                    <option value="{{ c.pk }}">{{ c.persona.nombre }} ({{ c.nit }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="pos-v2-cart-items" id="posCart">
+                <div class="pos-v2-empty">
+                    <i class="bi bi-cart-x" style="font-size:2.5rem; opacity:0.3;"></i>
+                    <p class="mt-2 mb-0">Carrito vacio</p>
+                    <small>Hace click en un producto</small>
+                </div>
+            </div>
         </div>
 
-        <div class="pos-cart-items" id="posCart">
-            <p class="text-muted text-center py-4 small">Carrito vacio</p>
-        </div>
-
-        <div class="border-top p-3 bg-light">
-            <div class="d-flex justify-content-between mb-2">
+        <!-- Card del resumen + botones -->
+        <div class="pos-v2-summary">
+            <div class="pos-v2-summary-row">
                 <span>Items:</span>
-                <span id="posItemCount">0</span>
+                <span><strong id="posItemCount">0</strong></span>
             </div>
-            <div class="d-flex justify-content-between mb-3">
-                <strong class="fs-5">Total:</strong>
-                <strong class="fs-4 text-success">Bs <span id="posTotal">0.00</span></strong>
+            <div class="pos-v2-summary-total">
+                <span class="label">Total:</span>
+                <span class="amount">Bs <span id="posTotal">0.00</span></span>
             </div>
-            <button id="posConfirmBtn" class="btn btn-success btn-lg w-100" disabled>
+            <button id="posConfirmBtn" class="btn btn-success btn-lg mb-2" disabled>
                 <i class="bi bi-check2-circle"></i> Confirmar venta
             </button>
-            <button id="posClearBtn" class="btn btn-outline-secondary w-100 mt-2">
+            <button id="posClearBtn" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-x-lg"></i> Vaciar carrito
             </button>
         </div>
@@ -70,7 +305,7 @@
 
 {% block extra_js %}
 <script>
-const cart = new Map(); // producto_id -> {producto, cantidad}
+const cart = new Map();
 const $products = document.getElementById('posProducts');
 const $cart = document.getElementById('posCart');
 const $total = document.getElementById('posTotal');
@@ -82,27 +317,35 @@ const $search = document.getElementById('posSearch');
 let productosCache = [];
 
 async function cargarProductos(q = '') {
-    const res = await fetch(`{% url 'ventas:api_productos' %}?q=${encodeURIComponent(q)}`);
-    const data = await res.json();
-    productosCache = data.productos;
-    renderProductos();
+    try {
+        const res = await fetch(`{% url 'ventas:api_productos' %}?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        productosCache = data.productos || [];
+        renderProductos();
+    } catch (e) {
+        $products.innerHTML = '<p class="text-danger text-center py-4 small">Error al cargar productos</p>';
+    }
 }
 
 function renderProductos() {
     if (!productosCache.length) {
-        $products.innerHTML = '<p class="text-muted text-center py-4">No hay productos disponibles</p>';
+        $products.innerHTML = '<p class="text-muted text-center py-4 small" style="grid-column: 1/-1;">No se encontraron productos</p>';
         return;
     }
     $products.innerHTML = productosCache.map(p => `
-        <div class="pos-product-card" data-id="${p.id}">
+        <div class="pos-v2-card ${p.stock <= 0 ? 'no-stock' : ''}" data-id="${p.id}">
             <div class="codigo">${p.codigo}</div>
             <div class="nombre">${p.nombre}</div>
             <div class="precio">Bs ${p.precio.toFixed(2)}</div>
             <div class="stock"><i class="bi bi-box"></i> ${p.stock}</div>
         </div>
     `).join('');
-    document.querySelectorAll('.pos-product-card').forEach(el => {
-        el.addEventListener('click', () => agregarAlCarrito(parseInt(el.dataset.id)));
+    document.querySelectorAll('.pos-v2-card').forEach(el => {
+        el.addEventListener('click', () => {
+            const id = parseInt(el.dataset.id);
+            const p = productosCache.find(x => x.id === id);
+            if (p && p.stock > 0) agregarAlCarrito(id);
+        });
     });
 }
 
@@ -141,19 +384,24 @@ function ajustarCantidad(id, delta) {
 
 function renderCart() {
     if (cart.size === 0) {
-        $cart.innerHTML = '<p class="text-muted text-center py-4 small">Carrito vacio</p>';
+        $cart.innerHTML = `
+            <div class="pos-v2-empty">
+                <i class="bi bi-cart-x" style="font-size:2.5rem; opacity:0.3;"></i>
+                <p class="mt-2 mb-0">Carrito vacio</p>
+                <small>Hace click en un producto</small>
+            </div>`;
     } else {
         $cart.innerHTML = Array.from(cart.values()).map(({ producto, cantidad }) => `
-            <div class="pos-cart-item">
-                <div style="flex:1; min-width:0;">
-                    <div class="fw-bold text-truncate">${producto.nombre}</div>
-                    <small class="text-muted">Bs ${producto.precio.toFixed(2)} c/u</small>
+            <div class="pos-v2-cart-item">
+                <div class="info">
+                    <div class="nom" title="${producto.nombre}">${producto.nombre}</div>
+                    <div class="pre">Bs ${producto.precio.toFixed(2)} c/u = Bs ${(cantidad * producto.precio).toFixed(2)}</div>
                 </div>
-                <div class="d-flex align-items-center gap-1">
-                    <button class="btn btn-sm btn-outline-secondary" onclick="ajustarCantidad(${producto.id}, -1)">-</button>
-                    <span class="px-2 fw-bold">${cantidad}</span>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="ajustarCantidad(${producto.id}, 1)">+</button>
-                    <button class="btn btn-sm btn-outline-danger ms-2" onclick="eliminar(${producto.id})"><i class="bi bi-trash"></i></button>
+                <div class="ctrl">
+                    <button onclick="ajustarCantidad(${producto.id}, -1)" title="Restar">−</button>
+                    <span class="qty">${cantidad}</span>
+                    <button onclick="ajustarCantidad(${producto.id}, 1)" title="Sumar">+</button>
+                    <button class="del" onclick="eliminar(${producto.id})" title="Quitar"><i class="bi bi-trash"></i></button>
                 </div>
             </div>
         `).join('');
@@ -170,6 +418,7 @@ $cliente.addEventListener('change', renderCart);
 $search.addEventListener('input', e => cargarProductos(e.target.value));
 
 document.getElementById('posClearBtn').addEventListener('click', () => {
+    if (cart.size === 0) return;
     if (confirm('Vaciar el carrito?')) {
         cart.clear();
         renderCart();
@@ -221,8 +470,6 @@ function getCookie(name) {
     return m ? m[2] : '';
 }
 
-// Inicializar
-{% csrf_token %}
 cargarProductos();
 </script>
 {% endblock %}

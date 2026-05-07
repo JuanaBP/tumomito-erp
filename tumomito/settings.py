@@ -90,6 +90,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'apps.dashboard.context_processors.empresa_info',
+                'apps.personal.context_processors.usuario_perfil',
             ],
         },
     },

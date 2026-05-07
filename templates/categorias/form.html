@@ -1,0 +1,91 @@
+{% extends 'layouts/base.html' %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label">Nombre *</label>
+                            {{ form.nombre }}
+                            {% if form.nombre.errors %}<div class="text-danger small">{{ form.nombre.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Orden</label>
+                            {{ form.orden }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Descripcion</label>
+                            {{ form.descripcion }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Icono Bootstrap</label>
+                            {{ form.icono }}
+                            <small class="text-muted">Ver lista: <a href="https://icons.getbootstrap.com" target="_blank">icons.getbootstrap.com</a></small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Color</label>
+                            {{ form.color }}
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                {{ form.activo }}
+                                <label class="form-check-label">Activa (mostrar en formularios y tienda)</label>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check2"></i> Guardar</button>
+                        <a href="{% url 'inventario:categorias' %}" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h6 class="text-muted small text-uppercase">Preview</h6>
+                <div class="d-flex align-items-center gap-3 p-3 border rounded bg-white" id="preview-card">
+                    <div id="preview-icon" class="rounded p-3 text-white bg-primary" style="font-size:1.5rem;">
+                        <i class="bi bi-tag"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0" id="preview-nombre">Nombre</h6>
+                        <small class="text-muted">Categoria de productos</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Preview en vivo del icono y color
+const $nombre = document.getElementById('id_nombre');
+const $icono = document.getElementById('id_icono');
+const $color = document.getElementById('id_color');
+const $previewIcon = document.getElementById('preview-icon');
+const $previewNombre = document.getElementById('preview-nombre');
+
+function updatePreview() {
+    const nombre = $nombre.value || 'Nombre';
+    const icono = $icono.value || 'bi-tag';
+    const color = $color.value || 'primary';
+    $previewNombre.textContent = nombre;
+    $previewIcon.className = `rounded p-3 text-white bg-${color}`;
+    $previewIcon.innerHTML = `<i class="bi ${icono}"></i>`;
+}
+[$nombre, $icono, $color].forEach(el => {
+    if (el) el.addEventListener('input', updatePreview);
+    if (el) el.addEventListener('change', updatePreview);
+});
+updatePreview();
+</script>
+{% endblock %}

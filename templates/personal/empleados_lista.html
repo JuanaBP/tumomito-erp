@@ -3,34 +3,88 @@
 {% block page_title %}Empleados{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header d-flex justify-content-between flex-wrap gap-2">
-        <form method="get" class="d-flex gap-2 flex-grow-1" style="max-width: 500px;">
-            <input type="search" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="Nombre o CI...">
+<div class="card mb-3">
+    <div class="card-body d-flex flex-wrap gap-2 align-items-center">
+        <form method="get" class="d-flex flex-grow-1 gap-2" style="max-width:600px;">
+            <input type="search" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="Buscar por nombre, CI, usuario...">
+            <select name="rol" class="form-select form-select-sm" style="max-width:200px;" onchange="this.form.submit()">
+                <option value="">Todos los roles</option>
+                {% for r in roles %}
+                <option value="{{ r.pk }}" {% if r.pk|stringformat:"s" == rol_id %}selected{% endif %}>{{ r.nombre }}</option>
+                {% endfor %}
+            </select>
             <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-search"></i></button>
         </form>
-        <a href="{% url 'personal:empleado_crear' %}" class="btn btn-sm btn-primary"><i class="bi bi-person-plus"></i> Nuevo Empleado</a>
+        <a href="{% url 'personal:empleado_crear' %}" class="btn btn-primary ms-auto">
+            <i class="bi bi-person-plus"></i> Nuevo empleado
+        </a>
     </div>
+</div>
+
+<div class="card">
     <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead><tr><th></th><th>Nombre</th><th>CI</th><th>Celular</th><th>Email</th><th>Estado civil</th><th>Contacto emergencia</th><th></th></tr></thead>
-            <tbody>
-                {% for e in empleados %}
-                <tr>
-                    <td><div class="avatar">{{ e.persona.nombre|first|upper }}</div></td>
-                    <td><strong>{{ e.persona.nombre }}</strong></td>
-                    <td>{{ e.persona.ci }}</td>
-                    <td>{{ e.persona.celular }}</td>
-                    <td>{{ e.persona.email|default:"-" }}</td>
-                    <td><span class="badge bg-light text-dark border">{{ e.estado_civil }}</span></td>
-                    <td><small>{{ e.nombre_contacto }}<br>{{ e.telf_contacto }}</small></td>
-                    <td><a href="{% url 'personal:empleado_editar' e.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a></td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="8" class="text-center text-muted py-4">Sin empleados registrados</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nombre</th>
+                        <th>CI</th>
+                        <th>Usuario</th>
+                        <th>Rol</th>
+                        <th>Celular</th>
+                        <th>Estado</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for e in empleados %}
+                    <tr>
+                        <td>
+                            <strong>{{ e.persona.nombre }}</strong>
+                            <small class="text-muted d-block">{{ e.persona.email|default:"-" }}</small>
+                        </td>
+                        <td><code>{{ e.persona.ci }}</code></td>
+                        <td>
+                            {% if e.user %}
+                                <code>{{ e.user.username }}</code>
+                            {% else %}
+                                <span class="text-muted small fst-italic">Sin usuario</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if e.rol %}
+                                {% if e.rol.es_admin %}
+                                    <span class="badge bg-danger"><i class="bi bi-shield-fill-check"></i> {{ e.rol.nombre }}</span>
+                                {% else %}
+                                    <span class="badge bg-primary">{{ e.rol.nombre }}</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-warning text-dark">Sin rol</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ e.persona.celular }}</td>
+                        <td>
+                            {% if e.activo %}
+                                <span class="badge bg-success">Activo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'personal:empleado_editar' e.pk %}" class="btn btn-outline-primary" title="Editar"><i class="bi bi-pencil"></i></a>
+                                {% if e.user %}
+                                <a href="{% url 'personal:empleado_resetear' e.pk %}" class="btn btn-outline-warning" title="Resetear contrasena"><i class="bi bi-key"></i></a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" class="text-center text-muted py-4">No hay empleados</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
     {% if empleados.has_other_pages %}
     <div class="card-footer">{% include 'layouts/_paginator.html' with page=empleados %}</div>
